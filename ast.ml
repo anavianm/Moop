@@ -5,7 +5,7 @@ type op = Add | Sub | Mult | Div | Equal | Neq | Less | Leq | Greater | Geq |
 
 type uop = Neg | Not
 
-type typ = Int | Bool | Float | Void
+type typ = Int | Bool | Float | Void | String
 
 type bind = typ * string
 
@@ -28,13 +28,21 @@ type stmt =
   | For of expr * expr * expr * stmt
   | While of expr * stmt
 
-type func_decl = {
+type method_decl = {
     typ : typ;
     fname : string;
     formals : bind list;
     locals : bind list;
     body : stmt list;
   }
+
+type class_decl { 
+    cname : string; 
+    fields : bind list;
+    methods : method_decl list;
+    static : method_decl list;     
+}
+
 
 type program = bind list * func_decl list
 
