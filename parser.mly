@@ -32,6 +32,7 @@ open Ast
 program:
   decls EOF { $1 }
 
+(* TODO decls only has cdecl*)
 decls:
    /* nothing */ { ([], [])               }
  | decls vdecl { (($2 :: fst $1), snd $1) }

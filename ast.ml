@@ -75,7 +75,7 @@ let string_of_uop = function
   | Invert -> "~"
 
 let string_of_cop = function 
-    This -> "this"
+    This  -> "this"
   | Super -> "super"
   | Class -> "class"
 
