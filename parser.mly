@@ -1,4 +1,4 @@
-/* Ocamlyacc parser for MicroC */
+/* Ocamlyacc parser for JPlusPlus */
 
 %{
 open Ast
@@ -7,6 +7,7 @@ open Ast
 %token SEMI LPAREN RPAREN LBRACE RBRACE COMMA PLUS MINUS TIMES DIVIDE ASSIGN
 %token NOT EQ NEQ LT LEQ GT GEQ AND OR
 %token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID
+%token CLASS SUPER THIS EXTENDS INVERT
 %token <int> LITERAL
 %token <bool> BLIT
 %token <string> ID FLIT
@@ -34,15 +35,30 @@ program:
 decls:
    /* nothing */ { ([], [])               }
  | decls vdecl { (($2 :: fst $1), snd $1) }
- | decls fdecl { (fst $1, ($2 :: snd $1)) }
+ | decls mdecl { (fst $1, ($2 :: snd $1)) }
 
-fdecl:
+
+mdecl_list: 
+    mdecl_list mdecl { $2 :: $1 }
+
+mdecl:
    typ ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
      { { typ = $1;
 	 fname = $2;
 	 formals = List.rev $4;
 	 locals = List.rev $7;
 	 body = List.rev $8 } }
+
+cdecl:
+  CLASS ID extends LBRACE vdecl_list mdecl_list RBRACE
+    { { cname = $2;
+    pname = $3;
+    fields = List.rev $5;
+    methods = List.rev $6 } }
+
+extends: 
+  /* nothing */ {""}
+  | EXTENDS ID { $2 }
 
 formals_opt:
     /* nothing */ { [] }
@@ -68,6 +84,7 @@ vdecl:
 stmt_list:
     /* nothing */  { [] }
   | stmt_list stmt { $2 :: $1 }
+
 
 stmt:
     expr SEMI                               { Expr $1               }

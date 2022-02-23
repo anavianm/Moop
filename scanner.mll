@@ -1,4 +1,4 @@
-(* Ocamllex scanner for MicroC *)
+(* Ocamllex scanner for JPlusPlus *)
 
 { open Parser }
 
@@ -7,7 +7,9 @@ let digits = digit+
 
 rule token = parse
   [' ' '\t' '\r' '\n'] { token lexbuf } (* Whitespace *)
-| "/*"     { comment lexbuf }           (* Comments *)
+| "/*"     { mcomment lexbuf }           (* Multi Line Comments *)
+| "//"     { scomment lexbuf }           (* Single Line Comment *)
+| "(╯°□°）╯︵ ┻━┻" {fcomment lexbuf }
 | '('      { LPAREN }
 | ')'      { RPAREN }
 | '{'      { LBRACE }
@@ -52,6 +54,14 @@ rule token = parse
 | eof { EOF }
 | _ as char { raise (Failure("illegal character " ^ Char.escaped char)) }
 
-and comment = parse
+and mcomment = parse
   "*/" { token lexbuf }
-| _    { comment lexbuf }
+| _    { mcomment lexbuf }
+
+and scomment = parse 
+  "\n" { token lexbuf }
+| _    { scomment lexbuf }
+
+and fcomment = parse 
+"┬─┬ ノ( ゜-゜ノ)" { token lexbuf }
+| _               { fcomment lexbuf } 
