@@ -3,7 +3,7 @@
 # to test linking external code
 
 .PHONY : all
-all : microc.native printbig.o
+all : toplevel.native printbig.o
 
 # "make test" Compiles everything and runs the regression tests
 
@@ -11,16 +11,16 @@ all : microc.native printbig.o
 test : all testall.sh
 	./testall.sh
 
-# "make microc.native" compiles the compiler
+# "make moop.native" compiles the compiler
 #
 # The _tags file controls the operation of ocamlbuild, e.g., by including
 # packages, enabling warnings
 #
 # See https://github.com/ocaml/ocamlbuild/blob/master/manual/manual.adoc
 
-microc.native : parser.mly scanner.mll codegen.ml semant.ml microc.ml
-	opam config exec -- \
-	ocamlbuild -use-ocamlfind microc.native
+toplevel.native : parser.mly scanner.mll toplevel.ml
+	opam exec -- \
+	ocamlbuild -yaccflags --verbose -use-ocamlfind toplevel.native
 
 # "make clean" removes all generated files
 
@@ -36,11 +36,14 @@ printbig : printbig.c
 
 # Building the tarball
 
+# TESTS = \
+#   add1 arith1 arith2 arith3 fib float1 float2 float3 for1 for2 func1 \
+#   func2 func3 func4 func5 func6 func7 func8 func9 gcd2 gcd global1 \
+#   global2 global3 hello if1 if2 if3 if4 if5 if6 local1 local2 ops1 \
+#   ops2 printbig var1 var2 while1 while2
+
 TESTS = \
-  add1 arith1 arith2 arith3 fib float1 float2 float3 for1 for2 func1 \
-  func2 func3 func4 func5 func6 func7 func8 func9 gcd2 gcd global1 \
-  global2 global3 hello if1 if2 if3 if4 if5 if6 local1 local2 ops1 \
-  ops2 printbig var1 var2 while1 while2
+	 test1
 
 FAILS = \
   assign1 assign2 assign3 dead1 dead2 expr1 expr2 expr3 float1 float2 \
@@ -51,10 +54,10 @@ FAILS = \
 TESTFILES = $(TESTS:%=test-%.mc) $(TESTS:%=test-%.out) \
 	    $(FAILS:%=fail-%.mc) $(FAILS:%=fail-%.err)
 
-TARFILES = ast.ml sast.ml codegen.ml Makefile _tags microc.ml parser.mly \
-	README scanner.mll semant.ml testall.sh printbig.c \
+TARFILES = ast.ml  Makefile _tags toplevel.ml parser.mly \
+	README scanner.mll  testall.sh printbig.c \
 	$(TESTFILES:%=tests/%) 
 
-microc.tar.gz : $(TARFILES)
-	cd .. && tar czf microc/microc.tar.gz \
+moop.tar.gz : $(TARFILES)
+	cd .. && tar czf moop/moop.tar.gz \
 		$(TARFILES:%=microc/%)

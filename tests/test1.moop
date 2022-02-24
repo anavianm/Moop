@@ -1,0 +1,10 @@
+class Main {
+    int foo;
+
+    int hello ()  
+    {
+        int buzz;
+    }
+
+}
+
