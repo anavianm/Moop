@@ -37,9 +37,9 @@ decls:
   | decls cdecl      { $2 :: $1 }
 
 
-mdecl_list: 
-    /* nothing */    { []       }
-  | mdecl_list mdecl { $2 :: $1 } 
+// mdecl_list: 
+//     /* nothing */    { []       }
+//   | mdecl_list mdecl { $2 :: $1 } 
 
 mdecl:
    typ ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
