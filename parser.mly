@@ -36,19 +36,6 @@ decls:
    /* nothing */     { []       }
   | decls cdecl      { $2 :: $1 }
 
-
-// mdecl_list: 
-//     /* nothing */    { []       }
-//   | mdecl_list mdecl { $2 :: $1 } 
-
-mdecl:
-   typ ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
-     { { typ = $1;
-	 fname = $2;
-	 formals = List.rev $4;
-	 locals = List.rev $7;
-	 body = List.rev $8 } }
-
 cdecl:
   CLASS ID extends LBRACE cbodydecls RBRACE
     { { cname = $2;
@@ -60,6 +47,14 @@ cbodydecls:
    /* nothing */ { ([], [])               }
  | cbodydecls vdecl { (($2 :: fst $1), snd $1) }
  | cbodydecls mdecl { (fst $1, ($2 :: snd $1)) }
+
+mdecl:
+   typ ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
+     { { typ = $1;
+	 fname = $2;
+	 formals = List.rev $4;
+	 locals = List.rev $7;
+	 body = List.rev $8 } }
 
 extends: 
   /* nothing */ { None }
