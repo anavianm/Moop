@@ -3,21 +3,28 @@
 type op = Add | Sub | Mult | Div | Equal | Neq | Less | Leq | Greater | Geq |
           And | Or
 
-type uop = Neg | Not
+type uop = Neg | Not | Invert
 
-type typ = Int | Bool | Float | Void
+type cop = Class | This | Super 
+
+type typ = Int | Bool | Float | Void | Str 
 
 type bind = typ * string
 
+(* TODO 
+    Class Methods (DOT) 
+    Constructor Calls *)
 type expr =
     Literal of int
   | Fliteral of string
   | BoolLit of bool
+  | StringLit of string
   | Id of string
   | Binop of expr * op * expr
   | Unop of uop * expr
   | Assign of string * expr
   | Call of string * expr list
+  | Mcall of string * string * expr list
   | Noexpr
 
 type stmt =
@@ -28,7 +35,7 @@ type stmt =
   | For of expr * expr * expr * stmt
   | While of expr * stmt
 
-type func_decl = {
+type mdecl = {
     typ : typ;
     fname : string;
     formals : bind list;
@@ -36,7 +43,16 @@ type func_decl = {
     body : stmt list;
   }
 
-type program = bind list * func_decl list
+
+type cdecl =  { 
+    cname : string; 
+    pname : string option; 
+    fields : bind list;
+    methods : mdecl list;
+}
+
+
+type program = cdecl list
 
 (* Pretty-printing functions *)
 
@@ -57,12 +73,19 @@ let string_of_op = function
 let string_of_uop = function
     Neg -> "-"
   | Not -> "!"
+  | Invert -> "~"
+
+let string_of_cop = function 
+    This  -> "this"
+  | Super -> "super"
+  | Class -> "class"
 
 let rec string_of_expr = function
     Literal(l) -> string_of_int l
   | Fliteral(l) -> l
   | BoolLit(true) -> "true"
   | BoolLit(false) -> "false"
+  | StringLit(l) -> l 
   | Id(s) -> s
   | Binop(e1, o, e2) ->
       string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
@@ -70,6 +93,8 @@ let rec string_of_expr = function
   | Assign(v, e) -> v ^ " = " ^ string_of_expr e
   | Call(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+  | Mcall(o, f, el) -> 
+      o ^ "." ^ f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | Noexpr -> ""
 
 let rec string_of_stmt = function
@@ -90,17 +115,27 @@ let string_of_typ = function
   | Bool -> "bool"
   | Float -> "float"
   | Void -> "void"
+  | Str -> "string"
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 
-let string_of_fdecl fdecl =
-  string_of_typ fdecl.typ ^ " " ^
-  fdecl.fname ^ "(" ^ String.concat ", " (List.map snd fdecl.formals) ^
+let string_of_mdecl mdecl =
+  string_of_typ mdecl.typ ^ " " ^
+  mdecl.fname ^ "(" ^ String.concat ", " (List.map snd mdecl.formals) ^
   ")\n{\n" ^
-  String.concat "" (List.map string_of_vdecl fdecl.locals) ^
-  String.concat "" (List.map string_of_stmt fdecl.body) ^
+  String.concat "" (List.map string_of_vdecl mdecl.locals) ^
+  String.concat "" (List.map string_of_stmt mdecl.body) ^
   "}\n"
 
-let string_of_program (vars, funcs) =
-  String.concat "" (List.map string_of_vdecl vars) ^ "\n" ^
-  String.concat "\n" (List.map string_of_fdecl funcs)
+let string_of_cdecl cdecl =
+  let extext = match cdecl.pname with
+    | None -> ""
+    | Some s -> " <- " ^ s
+  in
+  "class " ^ cdecl.cname ^ extext ^ " {\n" ^
+  String.concat "" (List.map string_of_vdecl cdecl.fields) ^
+  String.concat "\n " (List.map string_of_mdecl cdecl.methods) ^
+  "}\n"
+
+let string_of_program program =
+  String.concat "" (List.map string_of_cdecl program) ^ "\n"

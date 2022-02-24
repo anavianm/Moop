@@ -1,4 +1,4 @@
-/* Ocamlyacc parser for MicroC */
+/* Ocamlyacc parser for JPlusPlus */
 
 %{
 open Ast
@@ -6,10 +6,11 @@ open Ast
 
 %token SEMI LPAREN RPAREN LBRACE RBRACE COMMA PLUS MINUS TIMES DIVIDE ASSIGN
 %token NOT EQ NEQ LT LEQ GT GEQ AND OR
-%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID
+%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID STR
+%token CLASS SUPER THIS EXTENDS INVERT DOT 
 %token <int> LITERAL
 %token <bool> BLIT
-%token <string> ID FLIT
+%token <string> ID FLIT SLIT
 %token EOF
 
 %start program
@@ -32,11 +33,22 @@ program:
   decls EOF { $1 }
 
 decls:
-   /* nothing */ { ([], [])               }
- | decls vdecl { (($2 :: fst $1), snd $1) }
- | decls fdecl { (fst $1, ($2 :: snd $1)) }
+   /* nothing */     { []       }
+  | decls cdecl      { $2 :: $1 }
 
-fdecl:
+cdecl:
+  CLASS ID extends LBRACE cbodydecls RBRACE
+    { { cname = $2;
+    pname = $3;
+    fields = List.rev (fst $5);
+    methods = List.rev (snd $5) } }
+
+cbodydecls:
+   /* nothing */ { ([], [])               }
+ | cbodydecls vdecl { (($2 :: fst $1), snd $1) }
+ | cbodydecls mdecl { (fst $1, ($2 :: snd $1)) }
+
+mdecl:
    typ ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
      { { typ = $1;
 	 fname = $2;
@@ -44,8 +56,12 @@ fdecl:
 	 locals = List.rev $7;
 	 body = List.rev $8 } }
 
+extends: 
+  /* nothing */ { None }
+  | EXTENDS ID  { Some $2 }
+
 formals_opt:
-    /* nothing */ { [] }
+    /* nothing */ { let _ = print_endline("HELP formals opt") in [] }
   | formal_list   { $1 }
 
 formal_list:
@@ -57,10 +73,11 @@ typ:
   | BOOL  { Bool  }
   | FLOAT { Float }
   | VOID  { Void  }
+  | STR   { Str }
 
 vdecl_list:
-    /* nothing */    { [] }
-  | vdecl_list vdecl { $2 :: $1 }
+    /* nothing */    { let _ = print_endline("HELP vdecl") in [] }
+  | vdecl_list vdecl { let _ = print_endline("HELP vdecl 2") in $2 :: $1 }
 
 vdecl:
    typ ID SEMI { ($1, $2) }
@@ -68,6 +85,7 @@ vdecl:
 stmt_list:
     /* nothing */  { [] }
   | stmt_list stmt { $2 :: $1 }
+
 
 stmt:
     expr SEMI                               { Expr $1               }
@@ -85,8 +103,9 @@ expr_opt:
 
 expr:
     LITERAL          { Literal($1)            }
-  | FLIT	     { Fliteral($1)           }
+  | FLIT	           { Fliteral($1)           }
   | BLIT             { BoolLit($1)            }
+  | SLIT             { StringLit($1)          }
   | ID               { Id($1)                 }
   | expr PLUS   expr { Binop($1, Add,   $3)   }
   | expr MINUS  expr { Binop($1, Sub,   $3)   }
@@ -103,8 +122,9 @@ expr:
   | MINUS expr %prec NOT { Unop(Neg, $2)      }
   | NOT expr         { Unop(Not, $2)          }
   | ID ASSIGN expr   { Assign($1, $3)         }
-  | ID LPAREN args_opt RPAREN { Call($1, $3)  }
-  | LPAREN expr RPAREN { $2                   }
+  | ID LPAREN args_opt RPAREN { Call($1, $3)              }
+  | ID DOT ID LPAREN args_opt RPAREN { Mcall($1, $3, $5)  }
+  | LPAREN expr RPAREN { $2                    }
 
 args_opt:
     /* nothing */ { [] }
