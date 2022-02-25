@@ -3,9 +3,9 @@
 # to test linking external code
 
 .PHONY : all
-all : toplevel.native printbig.o
+all : toplevel.native
 
-# "make test" Compiles everything and runs the regression tests
+# "make test" runs the regression tests
 
 .PHONY : test
 test : 
