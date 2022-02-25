@@ -21,6 +21,13 @@ The Micro OOP compiler
 |                                                                             ||                                                                             |
 \-----------------------------------------------------------------------------/
 
+
+/-----------------------------------------------------------------------------\
+|                                                                             |
+| FOR MOST ENJOYMENT MAKE SURE YOUR TERMINAL IS FULLSCREEEN :D                |
+|                                                                             |
+\-----------------------------------------------------------------------------/
+
 /-----------------------------------------------------------------------------\
 |                                                                             |
 | BEFORE RUNNING:                                                             |
@@ -49,10 +56,8 @@ Scanner and Parser
 
 Syntax to add in the future
 /-----------------------------------------------------------------------------\
-|                                                                             |
-|  1. "super" keyword to call parent class constructor                        |
-|  2. "this" keyword to call methods on itself                                |
-|  3. allowing interchangeable order of variables and statements within       |
+|                                                                             |                  |                                                                             |
+|  1. allowing interchangeable order of variables and statements within       |
 |     methods                                                                 |
 |                                                                             |
 \-----------------------------------------------------------------------------/
