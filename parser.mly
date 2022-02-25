@@ -4,10 +4,11 @@
 open Ast
 %}
 
-%token SEMI LPAREN RPAREN LBRACE RBRACE COMMA PLUS MINUS TIMES DIVIDE ASSIGN
+%token SEMI LPAREN RPAREN LBRACE RBRACE COMMA
+%token PLUS MINUS TIMES DIVIDE ASSIGN
 %token NOT EQ NEQ LT LEQ GT GEQ AND OR
 %token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID STR
-%token CLASS SUPER THIS EXTENDS INVERT DOT 
+%token CLASS SUPER THIS EXTENDS INVERT DOT NEW
 %token <int> LITERAL
 %token <bool> BLIT
 %token <string> ID FLIT SLIT
@@ -30,7 +31,7 @@ open Ast
 %%
 
 program:
-  decls EOF { $1 }
+  decls EOF { List.rev $1 }
 
 decls:
    /* nothing */     { []       }
@@ -44,24 +45,25 @@ cdecl:
     methods = List.rev (snd $5) } }
 
 cbodydecls:
-   /* nothing */ { ([], [])               }
- | cbodydecls vdecl { (($2 :: fst $1), snd $1) }
- | cbodydecls mdecl { (fst $1, ($2 :: snd $1)) }
+   /* nothing */     { ([], [])                 }
+ | cbodydecls ivdecl { (($2 :: fst $1), snd $1) }
+ | cbodydecls mdecl  { (fst $1, ($2 :: snd $1)) }
 
 mdecl:
-   typ ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
-     { { typ = $1;
-	 fname = $2;
-	 formals = List.rev $4;
-	 locals = List.rev $7;
-	 body = List.rev $8 } }
+   invert typ ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
+     { { priv = $1;
+      typ = $2;
+	    fname = $3;
+	    formals = List.rev $5;
+	    locals = List.rev $8;
+	    body = List.rev $9 } }
 
 extends: 
-  /* nothing */ { None }
+  /* nothing */ { None    }
   | EXTENDS ID  { Some $2 }
 
 formals_opt:
-    /* nothing */ { let _ = print_endline("HELP formals opt") in [] }
+    /* nothing */ { [] }
   | formal_list   { $1 }
 
 formal_list:
@@ -73,17 +75,28 @@ typ:
   | BOOL  { Bool  }
   | FLOAT { Float }
   | VOID  { Void  }
-  | STR   { Str }
+  | STR   { Str   }
 
 vdecl_list:
-    /* nothing */    { let _ = print_endline("HELP vdecl") in [] }
-  | vdecl_list vdecl { let _ = print_endline("HELP vdecl 2") in $2 :: $1 }
+    /* nothing */    { []       }
+  | vdecl_list vdecl { $2 :: $1 }
 
 vdecl:
    typ ID SEMI { ($1, $2) }
 
+ivdecl: 
+   invert typ ID SEMI { {
+     pub  = $1;
+     ityp = $2;
+     iname = $3;
+   } }
+
+invert:
+  /* nothing */ {false}
+  | INVERT      {true }
+
 stmt_list:
-    /* nothing */  { [] }
+    /* nothing */  { []       }
   | stmt_list stmt { $2 :: $1 }
 
 
@@ -99,7 +112,7 @@ stmt:
 
 expr_opt:
     /* nothing */ { Noexpr }
-  | expr          { $1 }
+  | expr          { $1     }
 
 expr:
     LITERAL          { Literal($1)            }
@@ -123,13 +136,18 @@ expr:
   | NOT expr         { Unop(Not, $2)          }
   | ID ASSIGN expr   { Assign($1, $3)         }
   | ID LPAREN args_opt RPAREN { Call($1, $3)              }
-  | ID DOT ID LPAREN args_opt RPAREN { Mcall($1, $3, $5)  }
-  | LPAREN expr RPAREN { $2                    }
+  | ID DOT ID LPAREN args_opt RPAREN   { Mcall($1, $3, $5)  }
+  | NEW ID LPAREN args_opt RPAREN      { Concall ($2, $4)   }
+  | SUPER LPAREN args_opt RPAREN       { Supcall($3)        }
+  | THIS DOT ID      {Id($3)}
+  | THIS DOT ID ASSIGN expr {Assign($3, $5)}
+  | THIS DOT ID LPAREN args_opt RPAREN { Call($3, $5)       }
+  | LPAREN expr RPAREN { $2                 }
 
 args_opt:
-    /* nothing */ { [] }
-  | args_list  { List.rev $1 }
+    /* nothing */ { []          }
+  | args_list     { List.rev $1 }
 
 args_list:
-    expr                    { [$1] }
+    expr                 { [$1]     }
   | args_list COMMA expr { $3 :: $1 }
