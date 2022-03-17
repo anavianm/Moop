@@ -31,6 +31,14 @@ type sivdecl = {
     sityp  : typ;
     siname : string;
 }
+
+
+(* 
+type sodecl = { 
+  spub : bool; 
+  scname : string;
+  soname : string;
+} *)
   
 (* 
 type sfunc_decl = {
@@ -58,7 +66,7 @@ type scdecl =  {
 }
 
 
-type sprogram = bind list * scdecl list
+type sprogram = scdecl list
 
 (* Pretty-printing functions *)
 
@@ -111,6 +119,19 @@ let string_of_smdecl mdecl =
   String.concat "" (List.map string_of_sstmt mdecl.sbody) ^
   "}\n"
 
+let string_of_sivdecl ivdecl = 
+  let tilda = match ivdecl.spub with 
+    | true  -> "~ "
+    | false -> ""
+  in 
+  tilda ^ string_of_typ ivdecl.sityp ^ " "^ ivdecl.siname  ^ ";\n"
+
+  let string_of_sivdecl ivdecl = 
+    let tilda = match ivdecl.spub with 
+      | true  -> "~ "
+      | false -> ""
+    in 
+    tilda ^ string_of_typ ivdecl.sityp ^ " "^ ivdecl.siname  ^ ";\n"
 
 let string_of_scdecl cdecl =
   let extext = match cdecl.spname with
@@ -122,12 +143,7 @@ let string_of_scdecl cdecl =
   String.concat "\n " (List.map string_of_smdecl cdecl.smethods) ^
   "}\n"
 
-let string_of_sivdecl ivdecl = 
-  let tilda = match ivdecl.spub with 
-    | true  -> "~ "
-    | false -> ""
-  in 
-  tilda ^ string_of_typ ivdecl.sityp ^ " "^ ivdecl.siname  ^ ";\n"
+
 
 
 let string_of_sprogram program =

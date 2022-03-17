@@ -31,9 +31,31 @@ let check (classes) =
         in to_check
     in 
 
+    let check_ivdecls (to_check: ivdecl list) = 
+      let ivname_compare d1 d2 = compare d1.iname d2.iname in
+      let ivcheck_it checked ivar = 
+        let void_err = "illegal void field " ^ ivar.iname
+        and dup_err = "duplicate field " ^ ivar.iname
+        in match ivar.ityp with
+          (* No void bindings *)
+          Void -> raise (Failure void_err)
+        | _ -> match checked with
+                      (* No duplicate bindings *)
+                        (sivar2 :: _) when ivar.iname = sivar2.siname -> raise (Failure dup_err)
+                      | _ -> let sivar = {spub = ivar.pub;
+                                          sityp = ivar.ityp;
+                                          siname = ivar.iname} 
+                             in sivar :: checked
+
+      in let checked_sivars = List.fold_left ivcheck_it [] (List.sort ivname_compare to_check) 
+        in checked_sivars
+    in
+
+    (* TODO::IF weird bug check 'to_check' *)
+
     (* Check Fields *)
 
-    let fields' = check_binds "fields" currClass.fields in
+    let fields' = check_ivdecls currClass.fields in
 
     (* TODO Built-in functions*)
 
@@ -44,7 +66,7 @@ let check (classes) =
       let built_in_err = "function " ^ md.fname ^ " may not be defined"
       and dup_err = "duplicate method " ^ md.fname
       and make_err er = raise (Failure er)
-      and n = md.fname (* Name of the function *)
+      and n = currClass.cname ^ md.fname (* Name of the class ^ function *) (*TODO POssible bug?*)
       in match md with (* No duplicate functions or redefinitions of built-ins *)
           _ when StringMap.mem n built_in_decls -> make_err built_in_err
         | _ when StringMap.mem n map -> make_err dup_err  
@@ -52,13 +74,13 @@ let check (classes) =
     in
 
     (* Collect all other function names into one symbol table *)
-    let method_decls = List.fold_left add_method build_in_decls currClass.methods
+    let method_decls = List.fold_left add_method built_in_decls currClass.methods
     in
     
     (* Return a method from our symbol table *)
-    let find_method s = 
-      try StringMap.find s method_decls
-      with Not_found -> raise (Failure ("unrecognized method " ^ s))
+    let find_method cname s = 
+      try StringMap.find (cname ^ s) method_decls
+      with Not_found -> raise (Failure ("unrecognized method " ^ s ^ " in class " ^ cname))
     in
 
     (* Check Methods *)
@@ -76,7 +98,7 @@ let check (classes) =
 
       (* Build local symbol table of variables for this function *)
       let symbols = List.fold_left (fun m (ty, name) -> StringMap.add name ty m)
-          StringMap.empty (globals' @ formals' @ locals' )
+          StringMap.empty (formals' @ locals')
       in
 
       (* Return a variable from our local symbol table *)
@@ -128,7 +150,13 @@ let check (classes) =
                         string_of_typ t2 ^ " in " ^ string_of_expr e))
             in (ty, SBinop((t1, e1'), op, (t2, e2')))
         | Call(fname, args) as call -> 
-            let fd = find_method fname in
+            let fd = match fname with
+              "printf" -> (find_method "" fname) 
+            | "printb" -> (find_method "" fname) 
+            | "print" -> (find_method "" fname)
+            | "printbig" -> (find_method "" fname) 
+            | _ -> (find_method currClass.cname fname)
+            in
             let param_length = List.length fd.formals in
             if List.length args != param_length then
               raise (Failure ("expecting " ^ string_of_int param_length ^ 
@@ -141,9 +169,9 @@ let check (classes) =
             in 
             let args' = List.map2 check_call fd.formals args
             in (fd.typ, SCall(fname, args'))
-        | Mcall(objectId, mname, args) as mcall -> 
+        (* | Mcall(objectId, mname, args) as mcall -> 
             let md = find_method objectId mname in 
-            let param_length = List.length fd.formals in
+            let param_length = List.length md.formals in
             if List.length args != param_length then
               raise (Failure ("expecting " ^ string_of_int param_length ^ 
                               " arguments in " ^ string_of_expr mcall))
@@ -154,7 +182,8 @@ let check (classes) =
               in (check_assign mt et err, e')
             in 
             let args' = List.map2 check_call md.formals args
-            in (md.typ, SMCall(objectId, mname, args'))
+            in (md.typ, SMCall(objectId, mname, args')) *)
+        | _ -> raise (Failure "fail!!!!")
 
       in
 
@@ -175,7 +204,7 @@ let check (classes) =
           if t = currmethod.typ then SReturn (t, e') 
           else raise (
       Failure ("return gives " ^ string_of_typ t ^ " expected " ^
-        string_of_typ func.typ ^ " in " ^ string_of_expr e))
+        string_of_typ currmethod.typ ^ " in " ^ string_of_expr e))
         
         (* A block is correct if each statement is correct and nothing
           follows any Return statement.  Nested blocks are flattened. *)
@@ -189,7 +218,7 @@ let check (classes) =
             in SBlock(check_stmt_list sl)
 
       in (* body of check_function *)
-      { spriv = currmethod.priv
+      { spriv = currmethod.priv;
         styp = currmethod.typ;
         sfname = currmethod.fname;
         sformals = formals';
@@ -200,6 +229,11 @@ let check (classes) =
         in raise (Failure err)
       }
 
-    in (List.map check_method currClass.methods)
-
+    in 
+    {
+      scname = currClass.cname; 
+      spname = currClass.pname; 
+      sfields = fields';
+      smethods = (List.map check_method currClass.methods);
+    }
   in (List.map check_class classes)
