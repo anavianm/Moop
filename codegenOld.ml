@@ -62,7 +62,7 @@ let translate (globals, functions) =
 
   (* Define each function (arguments and return type) so we can 
    * define it's body and call it later *)
-  let function_decls : (L.llvalue * sfunc_decl) StringMap.t =
+  let : (L.llvalue * sfunc_decl) StringMap.t =
     let function_decl m fdecl =
       let name = fdecl.sfname
       and formal_types = 
@@ -155,7 +155,7 @@ let translate (globals, functions) =
 	  (match op with
 	    A.Neg when t = A.Float -> L.build_fneg 
 	  | A.Neg                  -> L.build_neg
-          | A.Not                  -> L.build_not) e' "tmp" builder
+    | A.Not                  -> L.build_not) e' "tmp" builder
       | SCall ("print", [e]) | SCall ("printb", [e]) ->
 	  L.build_call printf_func [| int_format_str ; (expr builder e) |]
 	    "printf" builder

@@ -59,18 +59,20 @@ let translate (classes) =
     List.fold_left create_class_types StringMap.empty classes in
 
   (* Set types of instance variables for each class struct *)
-  let set_class_bodies = 
+  (* Set class bodies *)
+  let _ = 
     let set_class_body cdecl = 
       let (class_type, _) = StringMap.find cdecl.scname class_types in
       let body_type  = Array.of_list (List.map (fun x -> ltype_of_typ x.sityp) cdecl.sfields) in
       L.struct_set_body class_type body_type false in
   List.map set_class_body classes in
 
-  (* TODO Get rid of this later *)
+  
   (* ========== DUMMY MAIN ========== *)
   let dummy_main_t = L.function_type i32_t [||] in
   let dummy_main = L.define_function "main" dummy_main_t the_module in
-  let dummy_main_ptr = L.define_global "main_ptr" dummy_main the_module in
+  (* Dummy main pointer *)
+  let _ = L.define_global "main_ptr" dummy_main the_module in
   let dummy_main_builder = L.builder_at_end context (L.entry_block dummy_main) in
 
 
@@ -115,6 +117,7 @@ let translate (classes) =
           let local_var = L.build_alloca (ltype_of_typ t) n builder in 
             StringMap.add n local_var m 
         in
+        (* =========== FORMAL VARIABLES ========== *)
         let formals = List.fold_left2 add_formal StringMap.empty mdecl.sformals
             (Array.to_list (L.params the_method)) in
         List.fold_left add_local formals mdecl.slocals 
@@ -193,7 +196,7 @@ let translate (classes) =
                                   A.Void -> ""
                                 | _ -> f ^ "_result") in
                   L.build_call fdef (Array.of_list llargs) result builder
-        (* TODO: remove this after adding all cases *)
+        (* TODO: add more expr cases anremove this after adding all cases *)
         | _ -> L.const_int i32_t 0
         
       in
@@ -235,6 +238,9 @@ let translate (classes) =
   
   let _ = List.map build_class_method_bodies classes in
 
+
+(* =========== ADD MAIN METHOD CALL =========== *)
+(* Dummy main method will have a call to class Main's main method. *)
 let _ =
 let (fdef, fdecl) = StringMap.find "Mainmain" method_decls in 
 let llargs = [] in
@@ -251,12 +257,5 @@ let _ =
 in
 
 
-(* TODO: REMOVE AT THE END. For testing purposes *)
-let (ct, _ ) = StringMap.find "Main" class_types in
-let main_t = Llvm.function_type (Llvm.void_type context) [| ct |] in
-let _main = Llvm.declare_function "main" main_t the_module in
-(* END REMOVE *)
-
-L.print_module "main.ll" the_module;
+L.print_module "tests/test.ll" the_module;
 the_module
-      

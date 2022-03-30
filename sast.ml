@@ -32,23 +32,6 @@ type sivdecl = {
     siname : string;
 }
 
-
-(* 
-type sodecl = { 
-  spub : bool; 
-  scname : string;
-  soname : string;
-} *)
-  
-(* 
-type sfunc_decl = {
-    styp : typ;
-    sfname : string;
-    sformals : bind list;
-    slocals : bind list;
-    sbody : sstmt list;
-} *)
-
 type smdecl = {
     spriv    : bool;
     styp     : typ;
@@ -126,13 +109,6 @@ let string_of_sivdecl ivdecl =
   in 
   tilda ^ string_of_typ ivdecl.sityp ^ " "^ ivdecl.siname  ^ ";\n"
 
-  let string_of_sivdecl ivdecl = 
-    let tilda = match ivdecl.spub with 
-      | true  -> "~ "
-      | false -> ""
-    in 
-    tilda ^ string_of_typ ivdecl.sityp ^ " "^ ivdecl.siname  ^ ";\n"
-
 let string_of_scdecl cdecl =
   let extext = match cdecl.spname with
     | None   -> ""
@@ -142,9 +118,6 @@ let string_of_scdecl cdecl =
   String.concat "" (List.map string_of_sivdecl cdecl.sfields) ^
   String.concat "\n " (List.map string_of_smdecl cdecl.smethods) ^
   "}\n"
-
-
-
 
 let string_of_sprogram program =
   String.concat "" (List.map string_of_scdecl program) ^ "\n"
