@@ -38,7 +38,7 @@ The Micro OOP compiler
 |                                                                             |
 \-----------------------------------------------------------------------------/
 
-Scanner and Parser
+How to generate LLVM code 
 /-----------------------------------------------------------------------------\
 |                                                                             |
 | How to Compile :                                                            |
@@ -48,10 +48,29 @@ Scanner and Parser
 | How to execute test script :                                                |
 |                    make test                                                |
 |                                                                             |
+| Available Flags : 
+|             [-a] print the AST 
+|             [-s] print the SAST 
+|             [-l] print the generated LLVM IR 
+|             [-c] print the generated LLVM IR and check LLVM is valid
+|
 | How to run on specific files :                                              |
-|                    ./toplevel.native -a [filename]                          |
+|                    ./toplevel.native [flag] [filename]                      |
 |                                                                             |
 \-----------------------------------------------------------------------------/
+
+
+Programs in testing suite 
+
+/-----------------------------------------------------------------------------\
+|
+|  1. helloworld.moop     : Prints hello world 
+|  2. locals.moop         : Hello world with locals declared in main method
+|  3. printint.moop       : Prints an int
+|  4. additionreturn.moop : Prints two numbers added 
+| 
+\
+
 
 
 Syntax to add in the future
@@ -61,4 +80,5 @@ Syntax to add in the future
 |     methods                                                                 |
 |                                                                             |
 \-----------------------------------------------------------------------------/
+
 

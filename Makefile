@@ -47,7 +47,7 @@ printbig : printbig.c
 
 zip:
 	zip -r moop.zip Makefile ast.ml scanner.mll toplevel.ml README testall.py \
-	parser.mly \tests
+	parser.mly codegen.ml sast.ml semant.ml \tests
 
 
 # Building the tarball
