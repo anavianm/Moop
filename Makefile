@@ -18,13 +18,13 @@ test :
 #
 # See https://github.com/ocaml/ocamlbuild/blob/master/manual/manual.adoc
 
-toplevel.native : parser.mly scanner.mll toplevel.ml
+toplevel.native : parser.mly scanner.mll sast.ml semant.ml codegen.ml toplevel.ml
 	opam exec -- \
-	ocamlbuild -yaccflags --verbose -use-ocamlfind toplevel.native
+	ocamlbuild -use-ocamlfind toplevel.native
 
 # Anthony Friendly Toplevel make
 
-toplevel.nnative : parser.mly scanner.mll toplevel.ml
+toplevel.nnative : parser.mly scanner.mll  sast.ml semant.ml codegen.ml toplevel.ml
 	opam exec -- \
 	ocamlbuild -yaccflags --verbose -use-ocamlfind toplevel.native
 
@@ -47,7 +47,7 @@ printbig : printbig.c
 
 zip:
 	zip -r moop.zip Makefile ast.ml scanner.mll toplevel.ml README testall.py \
-	parser.mly \tests
+	parser.mly codegen.ml sast.ml semant.ml \tests
 
 
 # Building the tarball

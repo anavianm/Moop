@@ -17,6 +17,12 @@ type ivdecl = {
   iname : string;
 }
 
+(* type odecl = { 
+  pub   : bool;
+  cname : string;
+  oname : string;
+} *)
+
 (* TODO 
     Class Methods (DOT) 
     Constructor Calls *)
@@ -138,7 +144,6 @@ let string_of_ivdecl ivdecl =
   in 
   tilda ^ string_of_typ ivdecl.ityp ^ " "^ ivdecl.iname  ^ ";\n"
   
-
 let string_of_mdecl mdecl =
   let tilda = match mdecl.priv with 
     | true  -> "~ "
