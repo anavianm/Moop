@@ -18,13 +18,13 @@ test :
 #
 # See https://github.com/ocaml/ocamlbuild/blob/master/manual/manual.adoc
 
-toplevel.native : parser.mly scanner.mll toplevel.ml sast.ml semant.ml codegen.ml
+toplevel.native : parser.mly scanner.mll sast.ml semant.ml codegen.ml toplevel.ml
 	opam exec -- \
-	ocamlbuild -yaccflags --verbose -use-ocamlfind toplevel.native
+	ocamlbuild -use-ocamlfind toplevel.native
 
 # Anthony Friendly Toplevel make
 
-toplevel.nnative : parser.mly scanner.mll toplevel.ml sast.ml semant.ml codegen.ml
+toplevel.nnative : parser.mly scanner.mll  sast.ml semant.ml codegen.ml toplevel.ml
 	opam exec -- \
 	ocamlbuild -yaccflags --verbose -use-ocamlfind toplevel.native
 

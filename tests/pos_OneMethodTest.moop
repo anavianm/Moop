@@ -1,5 +1,6 @@
 class Main {
-    int main () { 
-        return 0;
+    int main () {
+        print ("Hello Mert the time is 336 AM do you know where your children are"); 
+        return 5;
     }
 }

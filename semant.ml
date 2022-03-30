@@ -59,7 +59,18 @@ let check (classes) =
 
     (* TODO Built-in functions*)
 
-    let built_in_decls = StringMap.empty in
+    let built_in_decls = 
+      let add_bind map (name, ty) = StringMap.add name {
+        priv = false;
+        typ = Void; 
+        fname = name; 
+        formals = [(ty, "x")];
+        locals = []; body = [] } map
+      in List.fold_left add_bind StringMap.empty [ ("printi", Int);
+                                 ("printb", Bool);
+                                 ("printf", Float);
+                                 ("print", Str);
+                                 ("printbig", Int) ] in
 
     (* Add function name to symbol table *)
     let add_method map md = 
@@ -154,6 +165,7 @@ let check (classes) =
               "printf" -> (find_method "" fname) 
             | "printb" -> (find_method "" fname) 
             | "print" -> (find_method "" fname)
+            | "printi" -> (find_method "" fname)
             | "printbig" -> (find_method "" fname) 
             | _ -> (find_method currClass.cname fname)
             in
