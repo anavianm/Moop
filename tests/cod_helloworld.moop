@@ -1,0 +1,6 @@
+class Main { 
+    int main () { 
+        print ("Hello World, It's Mert and Richard");
+        return 0;
+    }
+}

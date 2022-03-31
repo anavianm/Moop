@@ -1,6 +1,6 @@
-class Main {
+class Main { 
     int main () {
-        print ("moopert");
+        printi (42);
         return 0;
     }
 }

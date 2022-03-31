@@ -11,6 +11,7 @@ all : toplevel.native
 test : 
 	python3 testall.py
 
+
 # "make moop.native" compiles the compiler
 #
 # The _tags file controls the operation of ocamlbuild, e.g., by including
@@ -28,12 +29,13 @@ toplevel.nnative : parser.mly scanner.mll  sast.ml semant.ml codegen.ml toplevel
 	opam exec -- \
 	ocamlbuild -yaccflags --verbose -use-ocamlfind toplevel.native
 
+
 # "make clean" removes all generated files
 
 .PHONY : clean
 clean :
 	ocamlbuild -clean
-	rm -rf testall.log ocamlllvm *.diff printbig.o
+	rm -rf testall.log ocamlllvm *.diff printbig.o 
 
 # Anthony Broken keyboard friendly clean 
 cleann :
@@ -46,8 +48,8 @@ printbig : printbig.c
 	cc -o printbig -DBUILD_TEST printbig.c
 
 zip:
-	zip -r moop.zip Makefile ast.ml scanner.mll toplevel.ml README testall.py \
-	parser.mly codegen.ml sast.ml semant.ml \tests
+	zip -r moop.zip _tags Makefile ast.ml scanner.mll toplevel.ml README testall.py \
+	parser.mly codegen.ml sast.ml semant.ml moop.py tests/
 
 
 # Building the tarball

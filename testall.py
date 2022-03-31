@@ -1,5 +1,6 @@
 import os
 import time
+import sys
 from subprocess import check_output, CalledProcessError
 
 tests_directory = "tests"
@@ -35,56 +36,67 @@ try:
 except:
     print("Error occured while compiling compiler.")
 
-print("")
-print("======================== Running Positive Tests ======================== \n")
-print("")
 
-pos_count = 0
-pos_total = 0
-for filename in os.listdir(tests_directory):
+
+num_args = len(sys.argv)
+if num_args == 1:
+    print("")
+    print("======================== Running All Tests ======================== \n")
+    print("")
+
+    count = 0
+    total = 0
+    for filename in os.listdir(tests_directory):
+        f = os.path.join(tests_directory, filename)
+
+        if "cod" == filename[:3] and os.path.isfile(f):
+            print("File Name: " + filename)
+            os.system("./toplevel.native -c " + f + " > tests/output.txt 2> tests/error.txt")
+            os.system("lli tests/test.ll " + " > tests/output.txt 2> tests/error.txt")
+            result = "Passed"
+            count += 1
+            total += 1
+            try:
+                output = check_output(["diff", "tests/exp_" + filename[:-4] + "txt", "tests/output.txt"]).decode("utf-8")
+            except:
+                result = "Failed"
+                count -= 1
+            print("Result: " + result)
+            print("Expected Output:")
+            os.system("cat " + "tests/exp_" + filename[:-4] + "txt")
+            print("")
+            print("Test Output:")
+            os.system("cat tests/output.txt")
+            print("")
+        
+
+    print("======================== FINAL RESULTS ======================== \n")
+    print("Test Cases Passed: " + str(count) + "/" + str(total))
+
+elif num_args == 2:
+    filename = sys.argv[1]
     f = os.path.join(tests_directory, filename)
 
-    if "pos" == filename[:3] and os.path.isfile(f):
-        print("File Name: " + filename)
-        os.system("./toplevel.native -a " + f + " > tests/output.txt 2> error.txt")
-        result = "Passed"
-        pos_count += 1
-        pos_total += 1
-        try:
-            output = check_output(["diff", "tests/exp_" + filename[:-4] + "txt", "tests/output.txt"]).decode("utf-8")
-        except:
-            result = "Failed"
-            pos_count -= 1
-        print("Result: " + result)
-        print("Test Output:")
-        os.system("cat tests/output.txt")
-        print("")
+    print("")
+    print("======================== Running " + filename + " ======================== \n")
+    print("")
 
-print("")
-print("======================== Running Negative Tests ======================== \n")
-print("")
+    os.system("./toplevel.native -c " + f + " > tests/output.txt 2> tests/error.txt")
+    os.system("lli tests/test.ll " + " > tests/output.txt 2> tests/error.txt")
+    result = "Passed"
+    try:
+        output = check_output(["diff", "tests/exp_" + filename[:-4] + "txt", "tests/output.txt"]).decode("utf-8")
+    except:
+        result = "Failed"
 
-neg_count = 0
-neg_total = 0
-for filename in os.listdir(tests_directory):
-    f = os.path.join(tests_directory, filename)
+    print("Result: " + result)
+    print("Expected Output:")
+    os.system("cat " + "tests/exp_" + filename[:-4] + "txt")
+    print("")
+    print("Test Output:")
+    os.system("cat tests/output.txt")
+    print("")
 
-    if "neg" == filename[:3] and os.path.isfile(f):
-        print("File Name: " + filename)
-        os.system("./toplevel.native -a " + f + " > output.txt 2> tests/error.txt")
-        result = "Passed"
-        neg_count += 1
-        neg_total += 1
-        try:
-            output = check_output(["diff", "tests/errormessage.txt", "tests/error.txt"]).decode("utf-8")
-        except:
-            neg_count -= 1
-            result = "Failed"
-        print("Result: " + result)
-        print("Test Output:")
-        os.system("cat tests/error.txt")
-        print("")
-
-print("======================== FINAL RESULTS ======================== \n")
-print("Positive Test Cases Passed: " + str(pos_count) + "/" + str(pos_total))
-print("Negative Test Cases Passed: " + str(neg_count) + "/" + str(neg_total))
+else:
+    print("Too many arguments!")
+    print("Usage: python3 testall.py [filename]")
