@@ -7,7 +7,9 @@ type uop = Neg | Not | Invert
 
 type cop = Class | This | Super 
 
-type typ = Int | Bool | Float | Void | Str 
+(* type typ = ClassT of string *)
+
+type typ = Int | Bool | Float | Void | Str | ClassT of string 
 
 type bind = typ * string
 
@@ -48,6 +50,7 @@ type stmt =
   | If of expr * stmt * stmt
   | For of expr * expr * expr * stmt
   | While of expr * stmt
+  | Nostmt
 
 type mdecl = {
     priv    : bool;
@@ -127,6 +130,7 @@ let rec string_of_stmt = function
       "for (" ^ string_of_expr e1  ^ " ; " ^ string_of_expr e2 ^ " ; " ^
       string_of_expr e3  ^ ") " ^ string_of_stmt s
   | While(e, s) -> "while (" ^ string_of_expr e ^ ") " ^ string_of_stmt s
+  | Nostmt -> ""
 
 let string_of_typ = function
     Int    -> "int"
@@ -134,6 +138,7 @@ let string_of_typ = function
   | Float  -> "float"
   | Void   -> "void"
   | Str    -> "string"
+  | ClassT (c) -> c
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 
