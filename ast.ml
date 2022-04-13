@@ -7,8 +7,6 @@ type uop = Neg | Not | Invert
 
 type cop = Class | This | Super 
 
-(* type typ = ClassT of string *)
-
 type typ = Int | Bool | Float | Void | Str | ClassT of string 
 
 type bind = typ * string
@@ -138,7 +136,7 @@ let string_of_typ = function
   | Float  -> "float"
   | Void   -> "void"
   | Str    -> "string"
-  | ClassT (c) -> c
+  | ClassT(c) -> c
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 

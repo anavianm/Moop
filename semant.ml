@@ -220,6 +220,7 @@ let check (classes) =
         
         (* A block is correct if each statement is correct and nothing
           follows any Return statement.  Nested blocks are flattened. *)
+        | Nostmt -> SNostmt
         | Block sl -> 
             let rec check_stmt_list = function
                 [Return _ as s] -> [check_stmt s]

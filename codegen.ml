@@ -31,24 +31,11 @@ let translate (classes) =
   and float_t    = L.double_type   context 
   and void_t     = L.void_type     context 
   and string_t   = L.pointer_type  (L.i8_type context) 
+  (* and class_t    = L.pointer_type  context *)
 
   (* Create an LLVM module -- this is a "container" into which we'll 
      generate actual code *)
   and the_module = L.create_module context "MicroOOP" in
-
-  (* Convert MicroC types to LLVM types *)
-  let ltype_of_typ = function
-      A.Int      -> i32_t
-    | A.Bool     -> i1_t
-    | A.Float    -> float_t
-    | A.Str      -> string_t
-    | A.Void     -> void_t
-  in
-
-  let printf_t : L.lltype = 
-    L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
-  let printf_func : L.llvalue =   
-    L.declare_function "printf" printf_t the_module in
 
   let class_types : (L.lltype * scdecl) StringMap.t = 
     (* Create class types *)
@@ -57,6 +44,23 @@ let translate (classes) =
       let class_type = L.named_struct_type context name in
       StringMap.add name (class_type, cdecl) m in 
     List.fold_left create_class_types StringMap.empty classes in
+
+  (* Convert MicroC types to LLVM types *)
+  let ltype_of_typ = function
+      A.Int      -> i32_t
+    | A.Bool     -> i1_t
+    | A.Float    -> float_t
+    | A.Str      -> string_t
+    | A.Void     -> void_t
+    | A.ClassT (name)  -> fst (StringMap.find name class_types)
+  in
+
+  let printf_t : L.lltype = 
+    L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
+  let printf_func : L.llvalue =   
+    L.declare_function "printf" printf_t the_module in
+
+ 
 
   (* Set types of instance variables for each class struct *)
   (* Set class bodies *)

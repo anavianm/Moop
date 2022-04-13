@@ -25,6 +25,8 @@ type sstmt =
   | SIf of sexpr * sstmt * sstmt
   | SFor of sexpr * sexpr * sexpr * sstmt
   | SWhile of sexpr * sstmt
+  | SNostmt 
+
 
 type sivdecl = {
     spub   : bool;
@@ -89,6 +91,7 @@ let rec string_of_sstmt = function
       "for (" ^ string_of_sexpr e1  ^ " ; " ^ string_of_sexpr e2 ^ " ; " ^
       string_of_sexpr e3  ^ ") " ^ string_of_sstmt s
   | SWhile(e, s) -> "while (" ^ string_of_sexpr e ^ ") " ^ string_of_sstmt s
+  | SNostmt -> ""
 
 let string_of_smdecl mdecl =
   let tilda = match mdecl.spriv with 

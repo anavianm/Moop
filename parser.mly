@@ -52,7 +52,7 @@ cbodydecls:
 mdecl:
    invert typ ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
      { { priv = $1;
-      typ = ClassT ($2);
+      typ = $2;
 	    fname = $3;
 	    formals = List.rev $5;
 	    locals = List.rev $8;
@@ -67,7 +67,7 @@ formals_opt:
   | formal_list   { $1 }
 
 formal_list:
-    typ ID                   { [($1,$2)]     }
+    typ ID                   { [($1,$2)] }
   | formal_list COMMA typ ID { ($3,$4) :: $1 }
 
 typ:
@@ -99,7 +99,7 @@ invert:
   | INVERT      {true }
 
 stmt_list:
-     empty_statement { []       }
+    empty_statement  { []       }
   | stmt_list stmt   { $2 :: $1 }
 
 
@@ -108,7 +108,7 @@ stmt_list:
 stmt:
     expr SEMI                               { Expr $1               }
   | RETURN expr_opt SEMI                    { Return $2             }
-  | empty_statement                         { Nostmt          }
+  | empty_statement                         { Nostmt                }
   | LBRACE stmt_list RBRACE                 { Block(List.rev $2)    }
   | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) }
   | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7)        }
@@ -116,8 +116,7 @@ stmt:
                                             { For($3, $5, $7, $9)   }
   | WHILE LPAREN expr RPAREN stmt           { While($3, $5)         }
 
-empty_statement: 
-      SEMI   {Nostmt}
+empty_statement: SEMI { Nostmt }
 
 expr_opt:
     /* nothing */ { Noexpr }
@@ -148,7 +147,7 @@ expr:
   | ID DOT ID LPAREN args_opt RPAREN      { Mcall($1, $3, $5)      }
   | NEW ID LPAREN args_opt RPAREN         { Concall ($2, $4)       }
   | SUPER LPAREN args_opt RPAREN          { Supcall($3)            }
-  | THIS DOT ID                           {Id($3)                  }
+  | THIS DOT ID                           { Id($3)                 }
   | THIS DOT ID ASSIGN expr               {Assign($3, $5)          }
   | THIS DOT ID LPAREN args_opt RPAREN    { Call($3, $5)           }
   | LPAREN expr RPAREN                    { $2                     }
@@ -160,3 +159,4 @@ args_opt:
 args_list:
     expr                 { [$1]     }
   | args_list COMMA expr { $3 :: $1 }
+
