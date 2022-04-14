@@ -1,9 +1,0 @@
-Traceback (most recent call last):
-  File "testall.py", line 46, in <module>
-    output = check_output(["diff", "tests/errormessage.txt", "tests/outpute.txt"]).decode("utf-8")
-  File "/usr/lib/python3.8/subprocess.py", line 415, in check_output
-    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
-  File "/usr/lib/python3.8/subprocess.py", line 516, in run
-    raise CalledProcessError(retcode, process.args,
-subprocess.CalledProcessError: Command '['diff', 'tests/errormessage.txt', 'tests/outpute.txt']' returned non-zero exit status 1.
-make: *** [Makefile:12: test] Error 1

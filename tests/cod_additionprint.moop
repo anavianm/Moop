@@ -1,0 +1,6 @@
+class Main { 
+    int main () {
+        printi (21 + 21);
+        return 0;
+    }
+}

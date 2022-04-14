@@ -1,7 +1,0 @@
-class Main {
-int main()
-{
-dog.free();
-}
-}
-

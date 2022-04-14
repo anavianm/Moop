@@ -10,7 +10,37 @@ module StringMap = Map.Make(String)
 
    Check each global variable, then check each function *)
 
+
 let check (classes) =
+  (* TODO Built-in functions*)
+
+  let built_in_decls = 
+    let add_bind map (name, ty) = StringMap.add name {
+      priv = false;
+      typ = Void; 
+      fname = name; 
+      formals = [(ty, "x")];
+      locals = []; body = [] } map
+    in List.fold_left add_bind StringMap.empty [ ("printi", Int);
+                               ("printb", Bool);
+                               ("printf", Float);
+                               ("print", Str);
+                               ("printbig", Int) ] in
+
+  (* Add function name to symbol table *)
+  let all_methods = 
+    let add_class_methods map cd = 
+      let add_method map md = 
+        let built_in_err = "function " ^ md.fname ^ " may not be defined"
+        and dup_err = "duplicate method " ^ md.fname
+        and make_err er = raise (Failure er)
+        and n = cd.cname ^ md.fname (* Name of the class ^ function *) (*TODO Possible bug?*)
+        in match md with (* No duplicate functions or redefinitions of built-ins *)
+            _ when StringMap.mem n built_in_decls -> make_err built_in_err
+          | _ when StringMap.mem n map -> make_err dup_err  
+          | _ ->  StringMap.add n md map
+      in List.fold_left add_method map cd.methods 
+    in List.fold_left add_class_methods StringMap.empty classes in
   let check_class (currClass) = 
     (* Check if a certain kind of binding has void type or is a duplicate
      of another, previously checked binding *)
@@ -57,40 +87,15 @@ let check (classes) =
 
     let fields' = check_ivdecls currClass.fields in
 
-    (* TODO Built-in functions*)
-
-    let built_in_decls = 
-      let add_bind map (name, ty) = StringMap.add name {
-        priv = false;
-        typ = Void; 
-        fname = name; 
-        formals = [(ty, "x")];
-        locals = []; body = [] } map
-      in List.fold_left add_bind StringMap.empty [ ("printi", Int);
-                                 ("printb", Bool);
-                                 ("printf", Float);
-                                 ("print", Str);
-                                 ("printbig", Int) ] in
-
-    (* Add function name to symbol table *)
-    let add_method map md = 
-      let built_in_err = "function " ^ md.fname ^ " may not be defined"
-      and dup_err = "duplicate method " ^ md.fname
-      and make_err er = raise (Failure er)
-      and n = currClass.cname ^ md.fname (* Name of the class ^ function *) (*TODO POssible bug?*)
-      in match md with (* No duplicate functions or redefinitions of built-ins *)
-          _ when StringMap.mem n built_in_decls -> make_err built_in_err
-        | _ when StringMap.mem n map -> make_err dup_err  
-        | _ ->  StringMap.add n md map 
-    in
-
-    (* Collect all other function names into one symbol table *)
-    let method_decls = List.fold_left add_method built_in_decls currClass.methods
-    in
+    
+  
+    
+    (* let method_decls = List.fold_left add_method built_in_decls currClass.methods
+    in *)
     
     (* Return a method from our symbol table *)
-    let find_method cname s = 
-      try StringMap.find (cname ^ s) method_decls
+    let find_method cname s =
+      try StringMap.find (cname ^ s) all_methods
       with Not_found -> raise (Failure ("unrecognized method " ^ s ^ " in class " ^ cname))
     in
 
@@ -181,6 +186,21 @@ let check (classes) =
             in 
             let args' = List.map2 check_call fd.formals args
             in (fd.typ, SCall(fname, args'))
+       | Concall(cname, args) as ccall -> 
+          let cd = find_method cname cname in 
+            let param_length = List.length cd.formals in 
+            if List.length args != param_length then
+              raise (Failure ("expecting " ^ string_of_int param_length ^ 
+                              " arguments in " ^ string_of_expr ccall))
+            else let check_call (ft, _) e = 
+              let (et, e') = expr e in 
+              let err = "illegal argument found " ^ string_of_typ et ^
+                " expected " ^ string_of_typ ft ^ " in " ^ string_of_expr e
+              in (check_assign ft et err, e')
+            in 
+            let args' = List.map2 check_call cd.formals args
+              in (cd.typ, SConcall(cname, args'))
+                      
         (* | Mcall(objectId, mname, args) as mcall -> 
             let md = find_method objectId mname in 
             let param_length = List.length md.formals in
@@ -220,6 +240,7 @@ let check (classes) =
         
         (* A block is correct if each statement is correct and nothing
           follows any Return statement.  Nested blocks are flattened. *)
+        | Nostmt -> SNostmt
         | Block sl -> 
             let rec check_stmt_list = function
                 [Return _ as s] -> [check_stmt s]

@@ -31,24 +31,11 @@ let translate (classes) =
   and float_t    = L.double_type   context 
   and void_t     = L.void_type     context 
   and string_t   = L.pointer_type  (L.i8_type context) 
+  (* and class_t    = L.pointer_type  context *)
 
   (* Create an LLVM module -- this is a "container" into which we'll 
      generate actual code *)
   and the_module = L.create_module context "MicroOOP" in
-
-  (* Convert MicroC types to LLVM types *)
-  let ltype_of_typ = function
-      A.Int      -> i32_t
-    | A.Bool     -> i1_t
-    | A.Float    -> float_t
-    | A.Str      -> string_t
-    | A.Void     -> void_t
-  in
-
-  let printf_t : L.lltype = 
-    L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
-  let printf_func : L.llvalue =   
-    L.declare_function "printf" printf_t the_module in
 
   let class_types : (L.lltype * scdecl) StringMap.t = 
     (* Create class types *)
@@ -57,6 +44,23 @@ let translate (classes) =
       let class_type = L.named_struct_type context name in
       StringMap.add name (class_type, cdecl) m in 
     List.fold_left create_class_types StringMap.empty classes in
+
+  (* Convert MicroC types to LLVM types *)
+  let ltype_of_typ = function
+      A.Int      -> i32_t
+    | A.Bool     -> i1_t
+    | A.Float    -> float_t
+    | A.Str      -> string_t
+    | A.Void     -> void_t
+    | A.ClassT (name)  -> fst (StringMap.find name class_types)
+  in
+
+  let printf_t : L.lltype = 
+    L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
+  let printf_func : L.llvalue =   
+    L.declare_function "printf" printf_t the_module in
+
+ 
 
   (* Set types of instance variables for each class struct *)
   (* Set class bodies *)
@@ -83,7 +87,7 @@ let translate (classes) =
     let get_class_method m cdecl = 
       let method_decl m mdecl = 
         (* String map key is the class name + method name *)
-        let name = cdecl.scname ^ mdecl.sfname 
+        let name = cdecl.scname ^ mdecl.sfname in let _ = print_string (name)
         and formal_types = 
           Array.of_list(List.map (fun (t,_) -> ltype_of_typ t) mdecl.sformals) in
         let mtype = L.function_type (ltype_of_typ mdecl.styp) formal_types in
@@ -190,17 +194,21 @@ let translate (classes) =
           L.build_call printf_func [| string_format_str; (expr builder e) |]
             "printf" builder
         | SCall (f, args) ->
-          let (fdef, fdecl) = StringMap.find f method_decls in 
+          let (fdef, fdecl) = StringMap.find (cdecl.scname ^ f) method_decls in 
             let llargs = List.rev (List.map (expr builder) (List.rev args)) in
             let result = (match fdecl.styp with 
                                   A.Void -> ""
                                 | _ -> f ^ "_result") in
                   L.build_call fdef (Array.of_list llargs) result builder
+        (* | SConcall (c, args) -> 
+            let (cdef, cdecl) = StringMap.find (c ^ c) method_decls in 
+              let llargs = List.rev (List.map (expr builder) (List.rev args)) in
+              let result =  c ^ "_result" in *)
+                
         (* TODO: add more expr cases anremove this after adding all cases *)
         | _ -> L.const_int i32_t 0
         
       in
-
 
 
       (* =========== STATEMENTS =========== *)

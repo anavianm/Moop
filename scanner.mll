@@ -3,6 +3,7 @@
 { open Parser }
 
 let digit = ['0' - '9']
+let special_chars = [',' '!' '?' '$' '@' '\'' ':' '#']
 let digits = digit+
 
 
@@ -53,7 +54,7 @@ rule token = parse
 | digits as lxm { LITERAL(int_of_string lxm) }
 | digits '.'  digit* as lxm { FLIT(lxm) }
 | ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_']* as lxm { ID(lxm) }
-| ['\"'] (['a'-'z' 'A'-'Z' '0'-'9' '_' ' ']* as lxm) ['\"']{ SLIT(lxm) }
+| ['\"'] ((['a'-'z' 'A'-'Z' '0'-'9' '_' ' '] | special_chars)* as lxm) ['\"']{ SLIT(lxm) }
 | eof { EOF }
 | _ as char { raise (Failure("illegal character " ^ Char.escaped char)) }
 

@@ -1,0 +1,6 @@
+class Main { 
+    int main () {
+        printi (42);
+        return 0;
+    }
+}

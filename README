@@ -35,6 +35,14 @@ The Micro OOP compiler
 |       $ opam install ocamlfind                                              |
 |       $ opam install ocamlbuild                                             |
 |                                                                             |
+|       Make sure to install LLVM, LLI, LLC                                   |
+|                                                                             |
+|       Make sure clang is installed                                          |
+|                                                                             |
+|       If on OSX:                                                            |
+|       Make sure to update your LLI path using                               |
+|               $ export PATH=$PATH:/usr/local/opt/llvm/bin                   |
+|                                                                             |
 |                                                                             |
 \-----------------------------------------------------------------------------/
 
@@ -48,34 +56,46 @@ How to generate LLVM code
 | How to execute test script :                                                |
 |                    make test                                                |
 |                                                                             |
-| Available Flags : 
-|             [-a] print the AST 
-|             [-s] print the SAST 
-|             [-l] print the generated LLVM IR 
-|             [-c] print the generated LLVM IR and check LLVM is valid
-|
-| How to run on specific files :                                              |
-|                    ./toplevel.native [flag] [filename]                      |
+| How to execute a single test :                                              |
+|                   python3 testall.py [filename]                             |
+|            note: [filename] must be in tests/ folder                        |
+|                                                                             |
+| Available Flags :                                                           |
+|             [-a] print the AST                                              |
+|             [-s] print the SAST                                             |
+|             [-l] print the generated LLVM IR                                |
+|             [-c] print the generated LLVM IR and check LLVM is valid        |
+|                                                                             |
+| How to generate intermediate files :                                        |
+|                    $ ./toplevel.native [flag] [filename]                    | 
+|                                                                             |
+| How to generate executable :                                                |
+|                    $ python3 moop.py [filepath]                             |                        |                                                                             |
+|           note: this will generate an executable named a.out                |
 |                                                                             |
 \-----------------------------------------------------------------------------/
 
 
 Programs in testing suite 
-
 /-----------------------------------------------------------------------------\
-|
-|  1. helloworld.moop     : Prints hello world 
-|  2. locals.moop         : Hello world with locals declared in main method
-|  3. printint.moop       : Prints an int
-|  4. additionreturn.moop : Prints two numbers added 
-| 
-\
-
+|                                                                             |
+|  1. cod_helloworld.moop     : Prints hello world                            |
+|  2. cod_locals.moop         : Hello world with locals declared in           |
+|                               main method                                   |
+|  3. cod_printint.moop       : Prints an int                                 |
+|  4. cod_additionprint.moop  : Prints two numbers added                      |
+|                                                                             |
+|                                                                             |
+|  Our test script compares the output of the tests to an expected            |
+|  output file for each test to validate whether the compiled program         |
+|  is correct                                                                 |
+|                                                                             |
+\-----------------------------------------------------------------------------/
 
 
 Syntax to add in the future
 /-----------------------------------------------------------------------------\
-|                                                                             |                  |                                                                             |
+|                                                                             |
 |  1. allowing interchangeable order of variables and statements within       |
 |     methods                                                                 |
 |                                                                             |
