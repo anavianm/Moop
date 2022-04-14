@@ -99,10 +99,8 @@ invert:
   | INVERT      {true }
 
 stmt_list:
-    empty_statement  { []       }
+  stmt             { $1 :: [] }
   | stmt_list stmt   { $2 :: $1 }
-
-
 
 
 stmt:
@@ -116,7 +114,9 @@ stmt:
                                             { For($3, $5, $7, $9)   }
   | WHILE LPAREN expr RPAREN stmt           { While($3, $5)         }
 
+
 empty_statement: SEMI { Nostmt }
+
 
 expr_opt:
     /* nothing */ { Noexpr }
@@ -148,7 +148,7 @@ expr:
   | NEW ID LPAREN args_opt RPAREN         { Concall ($2, $4)       }
   | SUPER LPAREN args_opt RPAREN          { Supcall($3)            }
   | THIS DOT ID                           { Id($3)                 }
-  | THIS DOT ID ASSIGN expr               {Assign($3, $5)          }
+  | THIS DOT ID ASSIGN expr               { Assign($3, $5)         }
   | THIS DOT ID LPAREN args_opt RPAREN    { Call($3, $5)           }
   | LPAREN expr RPAREN                    { $2                     }
 

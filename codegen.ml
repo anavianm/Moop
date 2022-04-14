@@ -87,7 +87,7 @@ let translate (classes) =
     let get_class_method m cdecl = 
       let method_decl m mdecl = 
         (* String map key is the class name + method name *)
-        let name = cdecl.scname ^ mdecl.sfname 
+        let name = cdecl.scname ^ mdecl.sfname in let _ = print_string (name)
         and formal_types = 
           Array.of_list(List.map (fun (t,_) -> ltype_of_typ t) mdecl.sformals) in
         let mtype = L.function_type (ltype_of_typ mdecl.styp) formal_types in
@@ -194,17 +194,21 @@ let translate (classes) =
           L.build_call printf_func [| string_format_str; (expr builder e) |]
             "printf" builder
         | SCall (f, args) ->
-          let (fdef, fdecl) = StringMap.find f method_decls in 
+          let (fdef, fdecl) = StringMap.find (cdecl.scname ^ f) method_decls in 
             let llargs = List.rev (List.map (expr builder) (List.rev args)) in
             let result = (match fdecl.styp with 
                                   A.Void -> ""
                                 | _ -> f ^ "_result") in
                   L.build_call fdef (Array.of_list llargs) result builder
+        (* | SConcall (c, args) -> 
+            let (cdef, cdecl) = StringMap.find (c ^ c) method_decls in 
+              let llargs = List.rev (List.map (expr builder) (List.rev args)) in
+              let result =  c ^ "_result" in *)
+                
         (* TODO: add more expr cases anremove this after adding all cases *)
         | _ -> L.const_int i32_t 0
         
       in
-
 
 
       (* =========== STATEMENTS =========== *)

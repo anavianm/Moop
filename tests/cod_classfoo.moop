@@ -1,0 +1,13 @@
+class Foo {
+	Foo Foo() {
+        ;
+	}
+}
+
+class Main { 
+    int main () { 
+        Foo foo;
+        foo = new Foo();
+    }
+}
+
