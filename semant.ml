@@ -28,6 +28,9 @@ let check (classes) =
                                ("printbig", Int) ] in
 
   (* Add function name to symbol table *)
+
+  (* TODO: Possibly combine the following for efficiency so we're not  *)
+  (*       Going over the methods twice  *)
   let all_methods = 
     let add_class_methods map cd = 
       let add_method map md = 
@@ -40,7 +43,16 @@ let check (classes) =
           | _ when StringMap.mem n map -> make_err dup_err  
           | _ ->  StringMap.add n md map
       in List.fold_left add_method map cd.methods 
-    in List.fold_left add_class_methods StringMap.empty classes in
+    in List.fold_left add_class_methods built_in_decls classes in
+  
+  let all_fields =
+    let add_class_fields map cd =
+      let add_field map ivd =
+        StringMap.add (cd.cname ^ ivd.iname) ivd.ityp map
+      in List.fold_left add_field map cd.fields
+    in List.fold_left add_class_fields StringMap.empty classes in
+
+  
   let check_class (currClass) = 
     (* Check if a certain kind of binding has void type or is a duplicate
      of another, previously checked binding *)
@@ -75,8 +87,8 @@ let check (classes) =
                       | _ -> let sivar = {spub = ivar.pub;
                                           sityp = ivar.ityp;
                                           siname = ivar.iname} 
-                             in sivar :: checked
-
+                              in sivar :: checked
+  
       in let checked_sivars = List.fold_left ivcheck_it [] (List.sort ivname_compare to_check) 
         in checked_sivars
     in
@@ -87,8 +99,6 @@ let check (classes) =
 
     let fields' = check_ivdecls currClass.fields in
 
-    
-  
     
     (* let method_decls = List.fold_left add_method built_in_decls currClass.methods
     in *)
@@ -150,7 +160,7 @@ let check (classes) =
         | Binop(e1, op, e2) as e -> 
             let (t1, e1') = expr e1 
             and (t2, e2') = expr e2 in
-            (* All binary operators require operands of the same type *)
+            (* All binafry operators require operands of the same type *)
             let same = t1 = t2 in
             (* Determine expression type based on operator and operand types *)
             let ty = match op with
@@ -167,10 +177,10 @@ let check (classes) =
             in (ty, SBinop((t1, e1'), op, (t2, e2')))
         | Call(fname, args) as call -> 
             let fd = match fname with
-              "printf" -> (find_method "" fname) 
-            | "printb" -> (find_method "" fname) 
-            | "print" -> (find_method "" fname)
-            | "printi" -> (find_method "" fname)
+              "printf"   -> (find_method "" fname) 
+            | "printb"   -> (find_method "" fname) 
+            | "print"    -> (find_method "" fname)
+            | "printi"   -> (find_method "" fname)
             | "printbig" -> (find_method "" fname) 
             | _ -> (find_method currClass.cname fname)
             in
@@ -186,6 +196,11 @@ let check (classes) =
             in 
             let args' = List.map2 check_call fd.formals args
             in (fd.typ, SCall(fname, args'))
+       | Field(oname, fname) as field ->
+          (* TODO: check if field is public *)
+          let ClassT c = type_of_identifier oname in
+            let ftyp = StringMap.find (c ^ fname) all_fields in
+          (ftyp, SField(oname, fname))
        | Concall(cname, args) as ccall -> 
           let cd = find_method cname cname in 
             let param_length = List.length cd.formals in 

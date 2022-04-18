@@ -36,6 +36,7 @@ type expr =
   | Unop of uop * expr
   | Assign of string * expr
   | Call of string * expr list
+  | Field of string * string
   | Mcall of string * string * expr list
   | Concall of string * expr list
   | Supcall of expr list
@@ -57,7 +58,7 @@ type mdecl = {
     formals : bind list;
     locals  : bind list;
     body    : stmt list;
-  }
+}
 
 type cdecl =  { 
     cname   : string; 
@@ -110,6 +111,8 @@ let rec string_of_expr = function
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | Mcall(o, f, el) -> 
       o ^ "." ^ f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+  | Field (f1, f2) -> 
+      f1 ^ "." ^ f2 
   | Concall(c, el) ->
       c ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | Supcall(el)    -> 

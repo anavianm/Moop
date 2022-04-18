@@ -1,7 +1,7 @@
 ; ModuleID = 'MicroOOP'
 source_filename = "MicroOOP"
 
-%Foo = type {}
+%Foo = type { i32, double }
 
 @main_ptr = global i32 ()* @main
 @fmt = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
@@ -21,12 +21,31 @@ entry:
 
 define %Foo @FooFoo() {
 entry:
-  ret i32 0
+  %malloccall = tail call i8* @malloc(i32 ptrtoint (%Foo* getelementptr (%Foo, %Foo* null, i32 1) to i32))
+  %Foo = bitcast i8* %malloccall to %Foo*
+  %field = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 0
+  store i32 0, i32* %field
+  %field1 = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 1
+  store double 0.000000e+00, double* %field1
+  ret %Foo* %Foo
+  ret %Foo* %Foo
 }
 
 define i32 @Mainmain() {
 entry:
   %foo = alloca %Foo
-  store i32 0, %Foo* %foo
+  %malloccall = tail call i8* @malloc(i32 ptrtoint (%Foo* getelementptr (%Foo, %Foo* null, i32 1) to i32))
+  %Foo = bitcast i8* %malloccall to %Foo*
+  %field = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 0
+  store i32 0, i32* %field
+  %field1 = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 1
+  store double 0.000000e+00, double* %field1
+  ret %Foo* %Foo
+  store %Foo* %Foo, %Foo* %foo
+  %field2 = getelementptr inbounds %Foo, %Foo* %foo, i32 0, i32 0
+  %x = load i32, i32* %field2
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.3, i32 0, i32 0), i32 %x)
   ret i32 0
 }
+
+declare noalias i8* @malloc(i32)

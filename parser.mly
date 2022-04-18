@@ -145,6 +145,7 @@ expr:
   | ID ASSIGN expr                        { Assign($1, $3)         }
   | ID LPAREN args_opt RPAREN             { Call($1, $3)           }
   | ID DOT ID LPAREN args_opt RPAREN      { Mcall($1, $3, $5)      }
+  | ID DOT ID                             { Field($1, $3)          }
   | NEW ID LPAREN args_opt RPAREN         { Concall ($2, $4)       }
   | SUPER LPAREN args_opt RPAREN          { Supcall($3)            }
   | THIS DOT ID                           { Id($3)                 }

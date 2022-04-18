@@ -13,6 +13,7 @@ and sx =
   | SUnop of uop * sexpr
   | SAssign of string * sexpr
   | SCall of string * sexpr list
+  | SField of string * string
   | SMcall of string * string * sexpr list
   | SConcall of string * sexpr list
   | SSupcall of sexpr list
@@ -69,6 +70,8 @@ let rec string_of_sexpr (t, e) =
   | SAssign(v, e) -> v ^ " = " ^ string_of_sexpr e
   | SCall(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
+  | SField (f1, f2) ->
+      f1 ^ "." ^ f2
   | SMcall(s1, s2, el) -> 
       s1 ^ "." ^ s2 ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
   | SConcall(s, el) -> 
