@@ -19,29 +19,15 @@ entry:
   ret i32 0
 }
 
-define %Foo @FooFoo() {
-entry:
-  %malloccall = tail call i8* @malloc(i32 ptrtoint (%Foo* getelementptr (%Foo, %Foo* null, i32 1) to i32))
-  %Foo = bitcast i8* %malloccall to %Foo*
-  %field = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 0
-  store i32 0, i32* %field
-  %field1 = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 1
-  store double 0.000000e+00, double* %field1
-  ret %Foo* %Foo
-  ret %Foo* %Foo
-}
-
 define i32 @Mainmain() {
 entry:
-  %foo = alloca %Foo
   %malloccall = tail call i8* @malloc(i32 ptrtoint (%Foo* getelementptr (%Foo, %Foo* null, i32 1) to i32))
-  %Foo = bitcast i8* %malloccall to %Foo*
-  %field = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 0
+  %foo = bitcast i8* %malloccall to %Foo*
+  %field = getelementptr inbounds %Foo, %Foo* %foo, i32 0, i32 0
   store i32 0, i32* %field
-  %field1 = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 1
+  %field1 = getelementptr inbounds %Foo, %Foo* %foo, i32 0, i32 1
   store double 0.000000e+00, double* %field1
-  ret %Foo* %Foo
-  store %Foo* %Foo, %Foo* %foo
+  store %Foo* %foo, %Foo* %foo
   %field2 = getelementptr inbounds %Foo, %Foo* %foo, i32 0, i32 0
   %x = load i32, i32* %field2
   %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.3, i32 0, i32 0), i32 %x)

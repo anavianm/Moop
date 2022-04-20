@@ -118,7 +118,7 @@ let translate (classes) =
           (* Allocate space for any locally declared variables and add the
           * resulting registers to our map *)
         let add_local m (t, n) =
-          let local_var = L.build_alloca (ltype_of_typ t) n builder in 
+          let local_var = L.build_alloca (ltype_of_typ t) n builder in (* TODO: build alloc structs here!*)
             StringMap.add n (t, local_var) m 
         in
         (* =========== FORMAL VARIABLES ========== *)
@@ -220,24 +220,27 @@ let translate (classes) =
             let get_default_value field = (match field.sityp with
                                             A.Int       -> L.const_int i32_t 0
                                           | A.Float     -> L.const_float_of_string float_t "0.0"
-                                          | A.Str    -> L.build_global_stringptr (Scanf.unescaped " ") "str" builder
+                                          | A.Str       -> L.build_global_stringptr (Scanf.unescaped " ") "str" builder
                                           | A.Bool      -> L.const_int i1_t 0
                                           (* | A.ClassT(c) -> c (* TODO: null value?? *) *)
-                                          | _           -> raise (Failure "Too lazy to implement classes rn")) in  
+                                         ``d | _           -> raise (Failure "Too lazy to implement classes rn")) in  
             let (_, cdecl) = StringMap.find c class_types in
             let set_default_value accum field = 
               let field_ptr = L.build_struct_gep cstruct_ptr accum "field" builder in 
               let default_value = get_default_value field in
               let _ = L.build_store default_value field_ptr builder in accum + 1
             in
-             let _ = List.fold_left set_default_value 0 cdecl.sfields in 
-             let _ = L.build_ret cstruct_ptr builder in cstruct_ptr
-             (* look up constructor *)
-             (* add return to constructor *)
+            let _ = List.fold_left set_default_value 0 cdecl.sfields in 
+            let (con_method, _) = StringMap.find (cdecl.scname ^ cdecl.scname) method_decls in
+            let temp_block = L.insertion_block builder in
+            let builder = L.builder_at_end context (L.entry_block con_method) in
+            let _ = L.build_ret cstruct_ptr builder in
+            let builder = L.builder_at_end context temp_block in cstruct_ptr
 
-          
+
+        (* code code code beep beep boop beep code code beep beep boop beep *)
             
-        (* TODO: add more expr cases anremove this after adding all cases *)
+        (* TODO: add more expr cases anremove this after adding all cases   *)
         | _ -> L.const_int i32_t 0
         
       in
@@ -272,7 +275,7 @@ let translate (classes) =
       add_terminal builder (match mdecl.styp with
           A.Void       -> L.build_ret_void
         | A.Float      -> L.build_ret (L.const_float float_t 0.0)
-        (* | A.ClassT (c) -> L.build_ret  *)
+        (* | ClassT (c)   -> L.build_unreachable *)
         | t -> L.build_ret (L.const_int (ltype_of_typ t) 0))    
     in
     List.map build_method_body cdecl.smethods in
