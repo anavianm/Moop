@@ -1,6 +1,6 @@
 class Main { 
     int main () {
-        printi (21 + 21);
+        print ("Hello There");
         return 0;
     }
 }

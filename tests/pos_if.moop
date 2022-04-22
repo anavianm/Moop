@@ -1,0 +1,15 @@
+class Main { 
+    int main () {
+        int result;
+        bool test;
+        result = 0;
+        test = true;
+
+        if (test == true) {
+            result = 1;
+        }
+
+        printi (result);
+        return 0;
+    }
+}

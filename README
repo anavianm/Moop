@@ -79,11 +79,20 @@ How to generate LLVM code
 Programs in testing suite 
 /-----------------------------------------------------------------------------\
 |                                                                             |
-|  1. cod_helloworld.moop     : Prints hello world                            |
-|  2. cod_locals.moop         : Hello world with locals declared in           |
-|                               main method                                   |
-|  3. cod_printint.moop       : Prints an int                                 |
-|  4. cod_additionprint.moop  : Prints two numbers added                      |
+| Positive Tests:                                                             |
+|  1. pos_printstring.moop    : Prints string                                 |
+|  2. pos_localstring.moop    : Assign and print string from local var        |
+|  3. pos_printint.moop       : Prints an int                                 |
+|  4. pos_printaddition.moop  : Prints two numbers added                      |
+|  5. pos_localassign.moop    : Assigns local var multiple values             |
+|  6  pos_forloop.moop        : For-loop increments local var                 |
+|  7. pos_if.moop             : If statement body assigns to local var        |
+|                                                                             |
+| Negative Tests:                                                             | 
+|  1. neg_undefinedfunction.moop : Calls a function that has not been defined |
+|  2. neg_addfloattoint.moop     : Add float to int                           |
+|  3. neg_duplicatefield.moop    : Class contains two fields with the same    |
+|                                  name                                       |
 |                                                                             |
 |                                                                             |
 |  Our test script compares the output of the tests to an expected            |

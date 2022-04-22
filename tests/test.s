@@ -25,8 +25,20 @@ Mainmain:                               # @Mainmain
 # %bb.0:                                # %entry
 	pushq	%rax
 	.cfi_def_cfa_offset 16
-	movl	$.Lfmt.2, %edi
-	movl	$.Lstr, %esi
+	movl	$0, 4(%rsp)
+	movl	$0, (%rsp)
+	cmpl	$3, (%rsp)
+	jg	.LBB1_3
+	.p2align	4, 0x90
+.LBB1_2:                                # %while_body
+                                        # =>This Inner Loop Header: Depth=1
+	incl	4(%rsp)
+	incl	(%rsp)
+	cmpl	$3, (%rsp)
+	jle	.LBB1_2
+.LBB1_3:                                # %merge
+	movl	4(%rsp), %esi
+	movl	$.Lfmt, %edi
 	xorl	%eax, %eax
 	callq	printf
 	xorl	%eax, %eax
@@ -60,10 +72,5 @@ main_ptr:
 .Lfmt.2:
 	.asciz	"%s\n"
 	.size	.Lfmt.2, 4
-
-	.type	.Lstr,@object           # @str
-.Lstr:
-	.asciz	"Hello World, It's Mert and Richard"
-	.size	.Lstr, 35
 
 	.section	".note.GNU-stack","",@progbits

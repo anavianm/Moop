@@ -40,7 +40,7 @@ let check (classes) =
           | _ when StringMap.mem n map -> make_err dup_err  
           | _ ->  StringMap.add n md map
       in List.fold_left add_method map cd.methods 
-    in List.fold_left add_class_methods StringMap.empty classes in
+    in List.fold_left add_class_methods built_in_decls classes in
   let check_class (currClass) = 
     (* Check if a certain kind of binding has void type or is a duplicate
      of another, previously checked binding *)
@@ -158,7 +158,7 @@ let check (classes) =
             | Add | Sub | Mult | Div when same && t1 = Float -> Float
             | Equal | Neq            when same               -> Bool
             | Less | Leq | Greater | Geq
-                      when same && (t1 = Int || t1 = Float) -> Bool
+                      when same && (t1 = Int || t1 = Float)  -> Bool
             | And | Or when same && t1 = Bool -> Bool
             | _ -> raise (
           Failure ("illegal binary operator " ^
