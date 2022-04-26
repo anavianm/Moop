@@ -213,7 +213,7 @@ let translate (classes) =
           let field_index = find fname cdecl.sfields in
           let field_ptr = L.build_struct_gep cstruct_ptr field_index "field" builder in
             L.build_load field_ptr fname builder
-        | SConcall (c, args) -> 
+        (* | SConcall (c, args) -> 
           let cstruct_ptr = L.build_malloc (ltype_of_typ (A.ClassT c)) c builder in 
             (* let cstruct0 = L.build_struct_gep cstruct 0 "name?" builder in 
             let cstruct1 = L.build_struct_gep 1 "" builder *)
@@ -235,7 +235,7 @@ let translate (classes) =
             let temp_block = L.insertion_block builder in
             let builder = L.builder_at_end context (L.entry_block con_method) in
             let _ = L.build_ret cstruct_ptr builder in
-            let builder = L.builder_at_end context temp_block in cstruct_ptr
+            let builder = L.builder_at_end context temp_block in cstruct_ptr *)
 
 
         (* code code code beep beep boop beep code code beep beep boop beep *)

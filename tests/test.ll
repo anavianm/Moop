@@ -19,19 +19,14 @@ entry:
   ret i32 0
 }
 
-define i32 @Mainmain() {
+define %Foo @FooFoo() {
 entry:
-  %malloccall = tail call i8* @malloc(i32 ptrtoint (%Foo* getelementptr (%Foo, %Foo* null, i32 1) to i32))
-  %foo = bitcast i8* %malloccall to %Foo*
-  %field = getelementptr inbounds %Foo, %Foo* %foo, i32 0, i32 0
-  store i32 0, i32* %field
-  %field1 = getelementptr inbounds %Foo, %Foo* %foo, i32 0, i32 1
-  store double 0.000000e+00, double* %field1
-  store %Foo* %foo, %Foo* %foo
-  %field2 = getelementptr inbounds %Foo, %Foo* %foo, i32 0, i32 0
-  %x = load i32, i32* %field2
-  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.3, i32 0, i32 0), i32 %x)
   ret i32 0
 }
 
-declare noalias i8* @malloc(i32)
+define i32 @Mainmain() {
+entry:
+  %foo = alloca %Foo, align 8
+  store i32 0, %Foo* %foo, align 4
+  ret i32 0
+}

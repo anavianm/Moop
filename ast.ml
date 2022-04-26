@@ -17,15 +17,6 @@ type ivdecl = {
   iname : string;
 }
 
-(* type odecl = { 
-  pub   : bool;
-  cname : string;
-  oname : string;
-} *)
-
-(* TODO 
-    Class Methods (DOT) 
-    Constructor Calls *)
 type expr =
     Literal of int
   | Fliteral of string
@@ -171,6 +162,6 @@ let string_of_cdecl cdecl =
   String.concat "" (List.map string_of_ivdecl cdecl.fields) ^
   String.concat "\n " (List.map string_of_mdecl cdecl.methods) ^
   "}\n"
-
+  
 let string_of_program program =
   String.concat "" (List.map string_of_cdecl program) ^ "\n"
