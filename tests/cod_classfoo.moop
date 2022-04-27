@@ -3,15 +3,16 @@ class Foo {
     int x;
 
 	Foo Foo() {
-        ;
+      print ("Hello");
 	}
 
 }
 
 class Main { 
     int main () { 
-        Foo foo;
-        int bar;
+        Foo test;
+        test = new Foo();
+        printi (test.x);
         return 0;
     }
 }

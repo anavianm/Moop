@@ -52,7 +52,7 @@ let translate (classes) =
     | A.Float    -> float_t
     | A.Str      -> string_t
     | A.Void     -> void_t
-    | A.ClassT (name)  -> fst (StringMap.find name class_types)
+    | A.ClassT (name)  -> L.pointer_type (fst (StringMap.find name class_types))
   in
 
   let printf_t : L.lltype = 
@@ -103,7 +103,7 @@ let translate (classes) =
           match cdecl.sconstr with
             None   -> m
           | Some c -> let formal_types = Array.of_list(List.map (fun (t,_) -> ltype_of_typ t) c.sconformals) in
-                      let ctyp = L.function_type (L.pointer_type (ltype_of_typ (A.ClassT classname))) formal_types in
+                      let ctyp = L.function_type (ltype_of_typ (A.ClassT classname)) formal_types in
                       StringMap.add classname (L.define_function classname ctyp the_module, c) m
       in List.fold_left get_class_constructor StringMap.empty classes
   in 
@@ -116,7 +116,7 @@ let translate (classes) =
     let builder = L.builder_at_end context (L.entry_block the_constructor) in
 
 
-    let cstruct_ptr = L.build_malloc (ltype_of_typ (A.ClassT cdecl.scname)) cdecl.scname builder in 
+    let cstruct_ptr = L.build_malloc (L.element_type (ltype_of_typ (A.ClassT cdecl.scname))) cdecl.scname builder in 
           (* let cstruct0 = L.build_struct_gep cstruct 0 "name?" builder in 
           let cstruct1 = L.build_struct_gep 1 "" builder *)
           let get_default_value field = (match field.sityp with
@@ -124,7 +124,7 @@ let translate (classes) =
                                         | A.Float     -> L.const_float_of_string float_t "0.0"
                                         | A.Str       -> L.build_global_stringptr (Scanf.unescaped " ") "str" builder
                                         | A.Bool      -> L.const_int i1_t 0
-                                        | A.ClassT(_) -> L.const_pointer_null (ltype_of_typ field.sityp)) in 
+                                        | A.ClassT(_) -> L.const_pointer_null (L.element_type (ltype_of_typ field.sityp))) in 
           let set_default_value accum field = 
             let field_ptr = L.build_struct_gep cstruct_ptr accum "field" builder in 
             let default_value = get_default_value field in
@@ -239,39 +239,13 @@ let translate (classes) =
       | SField (oname, fname) ->
         let (A.ClassT cname, cstruct_ptr) = lookup oname in
         let (_, cdecl) = StringMap.find cname class_types in
-        let rec find x lst = (* https://stackoverflow.com/questions/31279920/finding-an-item-in-a-list-and-returning-its-index-ocaml*)
+        let rec find x lst =  (* https://stackoverflow.com/questions/31279920/finding-an-item-in-a-list-and-returning-its-index-ocaml*)
           match lst with
           | []     -> raise (Failure "Not Found")
           | h :: t -> if x = h.siname then 0 else 1 + find x t in 
         let field_index = find fname cdecl.sfields in
         let field_ptr = L.build_struct_gep cstruct_ptr field_index "field" builder in
           L.build_load field_ptr fname builder
-      (* | SConcall (c, args) -> 
-          let cstruct_ptr = L.build_malloc (ltype_of_typ (A.ClassT c)) c builder in 
-          (* let cstruct0 = L.build_struct_gep cstruct 0 "name?" builder in 
-          let cstruct1 = L.build_struct_gep 1 "" builder *)
-          let get_default_value field = (match field.sityp with
-                                          A.Int       -> L.const_int i32_t 0
-                                        | A.Float     -> L.const_float_of_string float_t "0.0"
-                                        | A.Str       -> L.build_global_stringptr (Scanf.unescaped " ") "str" builder
-                                        | A.Bool      -> L.const_int i1_t 0
-                                        (* | A.ClassT(c) -> c (* TODO: null value?? *) *)
-                                        ``d | _           -> raise (Failure "Too lazy to implement classes rn")) in  
-          let (_, cdecl) = StringMap.find c class_types in
-          let set_default_value accum field = 
-            let field_ptr = L.build_struct_gep cstruct_ptr accum "field" builder in 
-            let default_value = get_default_value field in
-            let _ = L.build_store default_value field_ptr builder in accum + 1
-          in
-          let _ = List.fold_left set_default_value 0 cdecl.sfields in 
-          let (con_method, _) = StringMap.find (cdecl.scname ^ cdecl.scname) method_decls in
-          let temp_block = L.insertion_block builder in
-          let builder = L.builder_at_end context (L.entry_block con_method) in
-          let _ = L.build_ret cstruct_ptr builder in
-          let builder = L.builder_at_end context temp_block in cstruct_ptr *)
-
-
-      (* code code code beep beep boop beep code code beep beep boop beep *)
           
       (* TODO: add more expr cases anremove this after adding all cases   *)
       | _ -> L.const_int i32_t 0
@@ -331,7 +305,7 @@ let translate (classes) =
         let add_local m (t, n) = 
           let local_var =
             match t with
-            | A.ClassT (_) -> L.const_pointer_null (ltype_of_typ t)
+            (* | A.ClassT (_) -> L.build_alloca (L.element_type (ltype_of_typ t)) n builder  *)
             | _ -> L.build_alloca (ltype_of_typ t) n builder 
           in StringMap.add n (t, local_var) m 
         in
@@ -419,38 +393,21 @@ let translate (classes) =
                   L.build_call fdef (Array.of_list llargs) result builder
 
         | SField (oname, fname) ->
-          let (A.ClassT cname, cstruct_ptr) = lookup oname in
+          let (A.ClassT cname, double_ptr) = lookup oname in
           let (_, cdecl) = StringMap.find cname class_types in
           let rec find x lst = (* https://stackoverflow.com/questions/31279920/finding-an-item-in-a-list-and-returning-its-index-ocaml*)
             match lst with
             | []     -> raise (Failure "Not Found")
             | h :: t -> if x = h.siname then 0 else 1 + find x t in 
           let field_index = find fname cdecl.sfields in
-          let field_ptr = L.build_struct_gep cstruct_ptr field_index "field" builder in
+          let single_ptr = L.build_load double_ptr "tmp" builder in
+          let field_ptr = L.build_struct_gep single_ptr field_index "field" builder in
             L.build_load field_ptr fname builder
-        (* | SConcall (c, args) -> 
-          let cstruct_ptr = L.build_malloc (ltype_of_typ (A.ClassT c)) c builder in 
-            (* let cstruct0 = L.build_struct_gep cstruct 0 "name?" builder in 
-            let cstruct1 = L.build_struct_gep 1 "" builder *)
-            let get_default_value field = (match field.sityp with
-                                            A.Int       -> L.const_int i32_t 0
-                                          | A.Float     -> L.const_float_of_string float_t "0.0"
-                                          | A.Str       -> L.build_global_stringptr (Scanf.unescaped " ") "str" builder
-                                          | A.Bool      -> L.const_int i1_t 0
-                                          (* | A.ClassT(c) -> c (* TODO: null value?? *) *)
-                                         ``d | _           -> raise (Failure "Too lazy to implement classes rn")) in  
-            let (_, cdecl) = StringMap.find c class_types in
-            let set_default_value accum field = 
-              let field_ptr = L.build_struct_gep cstruct_ptr accum "field" builder in 
-              let default_value = get_default_value field in
-              let _ = L.build_store default_value field_ptr builder in accum + 1
-            in
-            let _ = List.fold_left set_default_value 0 cdecl.sfields in 
-            let (con_method, _) = StringMap.find (cdecl.scname ^ cdecl.scname) method_decls in
-            let temp_block = L.insertion_block builder in
-            let builder = L.builder_at_end context (L.entry_block con_method) in
-            let _ = L.build_ret cstruct_ptr builder in
-            let builder = L.builder_at_end context temp_block in cstruct_ptr *)
+        | SConcall (c, args) -> 
+          let (cdef, condecl) = StringMap.find c constr_decls in 
+            let llargs = List.rev (List.map (expr builder) (List.rev args)) in
+            let result = c ^ "_constr_result" in 
+              L.build_call cdef (Array.of_list llargs) result builder
 
 
         (* code code code beep beep boop beep code code beep beep boop beep *)
