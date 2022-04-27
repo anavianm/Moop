@@ -332,12 +332,18 @@ let check (classes) =
         then Some (check_constructor (StringMap.find currClass.cname all_constructors))
         else None
 
-    in 
+    in
+
+    let only_methods = 
+      let filter_methods md = (compare currClass.cname md.fname) != 0
+      in List.filter filter_methods currClass.methods
+    in
+    
     {
       scname = currClass.cname; 
       spname = currClass.pname; 
       sfields = fields';
       sconstr = currConstr;
-      smethods = (List.map check_method currClass.methods);
+      smethods = (List.map check_method only_methods);
     }
   in (List.map check_class classes)

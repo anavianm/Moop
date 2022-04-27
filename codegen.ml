@@ -30,8 +30,8 @@ let translate (classes) =
   and i1_t       = L.i1_type       context 
   and float_t    = L.double_type   context 
   and void_t     = L.void_type     context 
-  and string_t   = L.pointer_type  (L.i8_type context) 
-    (* and class_t    = L.pointer_type  context *)
+  and string_t   = L.pointer_type  (L.i8_type context)  
+    (* and class_t    = L.pointer_type  context *)      
 
   (* Create an LLVM module -- this is a "container" into which we'll 
      generate actual code *)
@@ -87,7 +87,7 @@ let translate (classes) =
     let get_class_method m cdecl = 
       let method_decl m mdecl = 
         (* String map key is the class name + method name *)
-        let name = cdecl.scname ^ mdecl.sfname in let _ = print_string (name)
+        let name = cdecl.scname ^ mdecl.sfname
         and formal_types = 
           Array.of_list(List.map (fun (t,_) -> ltype_of_typ t) mdecl.sformals) in
         let mtype = L.function_type (ltype_of_typ mdecl.styp) formal_types in
@@ -97,7 +97,218 @@ let translate (classes) =
     (* Fold over the list of classes *)
   List.fold_left get_class_method StringMap.empty classes in
 
+  let constr_decls : (L.llvalue * scondecl) StringMap.t =
+      let get_class_constructor m cdecl = 
+          let classname = cdecl.scname in
+          match cdecl.sconstr with
+            None   -> m
+          | Some c -> let formal_types = Array.of_list(List.map (fun (t,_) -> ltype_of_typ t) c.sconformals) in
+                      let ctyp = L.function_type (L.pointer_type (ltype_of_typ (A.ClassT classname))) formal_types in
+                      StringMap.add classname (L.define_function classname ctyp the_module, c) m
+      in List.fold_left get_class_constructor StringMap.empty classes
+  in 
+
+
+  let build_class_constructor cdecl = match cdecl.sconstr with
+    None -> ()
+  | Some condecl -> 
+    let (the_constructor, _) = StringMap.find cdecl.scname constr_decls in
+    let builder = L.builder_at_end context (L.entry_block the_constructor) in
+
+
+    let cstruct_ptr = L.build_malloc (ltype_of_typ (A.ClassT cdecl.scname)) cdecl.scname builder in 
+          (* let cstruct0 = L.build_struct_gep cstruct 0 "name?" builder in 
+          let cstruct1 = L.build_struct_gep 1 "" builder *)
+          let get_default_value field = (match field.sityp with
+                                          A.Int       -> L.const_int i32_t 0
+                                        | A.Float     -> L.const_float_of_string float_t "0.0"
+                                        | A.Str       -> L.build_global_stringptr (Scanf.unescaped " ") "str" builder
+                                        | A.Bool      -> L.const_int i1_t 0
+                                        | A.ClassT(_) -> L.const_pointer_null (ltype_of_typ field.sityp)) in 
+          let set_default_value accum field = 
+            let field_ptr = L.build_struct_gep cstruct_ptr accum "field" builder in 
+            let default_value = get_default_value field in
+            let _ = L.build_store default_value field_ptr builder in accum + 1
+          in
+          let _ = List.fold_left set_default_value 0 cdecl.sfields in 
+
+    let int_format_str    = L.build_global_stringptr "%d\n" "fmt" builder
+      and float_format_str  = L.build_global_stringptr "%g\n" "fmt" builder
+      and string_format_str = L.build_global_stringptr "%s\n" "fmt" builder in
   
+    (* =========== LOCAL VARIABLES =========== *)
+    let local_vars =
+      let add_formal m (t, n) p = 
+        let () = L.set_value_name n p in
+        let local = L.build_alloca (ltype_of_typ t) n builder in (* TODO: null pointer for object formals *)
+        let _  = L.build_store p local builder in
+          StringMap.add n (t, local) m 
+      in    
+        (* Allocate space for any locally declared variables and add the
+        * resulting registers to our map *)
+      let add_local m (t, n) = 
+        let local_var =
+          match t with
+          | A.ClassT (_) -> L.const_pointer_null (ltype_of_typ t)
+          | _ -> L.build_alloca (ltype_of_typ t) n builder 
+        in StringMap.add n (t, local_var) m 
+      in
+
+      (* =========== FORMAL VARIABLES ========== *)
+      let formals = List.fold_left2 add_formal StringMap.empty condecl.sconformals
+          (Array.to_list (L.params the_constructor)) in
+      List.fold_left add_local formals condecl.sconlocals 
+    in
+        
+    (* Return the value for a variable or formal argument. First check
+      * locals, then globals *)
+    let lookup n = StringMap.find n local_vars
+    in
+    
+
+
+    (* ============  EXPRS  ============ *)
+    (* Construct code for an expression; return its value *)
+    let rec expr builder ((_, e) : sexpr) = match e with
+      SLiteral i -> L.const_int i32_t i
+      | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
+      | SFliteral l -> L.const_float_of_string float_t l
+      | SStringLit l -> L.build_global_stringptr (Scanf.unescaped l) "str" builder
+      | SNoexpr -> L.const_int i32_t 0
+      | SId s -> L.build_load (snd(lookup s)) s builder
+      | SAssign (s, e) -> let e' = expr builder e in
+                          let _  = L.build_store e' (snd(lookup s)) builder in e'
+      | SBinop (e1, op, e2) ->
+        let (t, _) = e1
+        and e1' = expr builder e1
+        and e2' = expr builder e2 in
+          if t = A.Float then (match op with 
+            A.Add     -> L.build_fadd
+          | A.Sub     -> L.build_fsub
+          | A.Mult    -> L.build_fmul
+          | A.Div     -> L.build_fdiv 
+          | A.Equal   -> L.build_fcmp L.Fcmp.Oeq
+          | A.Neq     -> L.build_fcmp L.Fcmp.One
+          | A.Less    -> L.build_fcmp L.Fcmp.Olt
+          | A.Leq     -> L.build_fcmp L.Fcmp.Ole
+          | A.Greater -> L.build_fcmp L.Fcmp.Ogt
+          | A.Geq     -> L.build_fcmp L.Fcmp.Oge
+          | A.And | A.Or ->
+              raise (Failure "internal error: semant should have rejected and/or on float")
+          ) e1' e2' "tmp" builder 
+          else (match op with
+          | A.Add     -> L.build_add
+          | A.Sub     -> L.build_sub
+          | A.Mult    -> L.build_mul
+          | A.Div     -> L.build_sdiv
+          | A.And     -> L.build_and
+          | A.Or      -> L.build_or
+          | A.Equal   -> L.build_icmp L.Icmp.Eq
+          | A.Neq     -> L.build_icmp L.Icmp.Ne
+          | A.Less    -> L.build_icmp L.Icmp.Slt
+          | A.Leq     -> L.build_icmp L.Icmp.Sle
+          | A.Greater -> L.build_icmp L.Icmp.Sgt
+          | A.Geq     -> L.build_icmp L.Icmp.Sge
+          ) e1' e2' "tmp" builder
+      | SUnop(op, e) ->
+        let (t, _) = e in
+          let e' = expr builder e in
+          (match op with
+            A.Neg when t = A.Float -> L.build_fneg 
+          | A.Neg                  -> L.build_neg
+          | A.Not                  -> L.build_not
+          (* TODO: don't use build_not *)
+          | _                      -> L.build_not) e' "tmp" builder
+      | SCall ("printi", [e]) | SCall ("printb", [e]) ->
+        L.build_call printf_func [| int_format_str ; (expr builder e) |]
+          "printf" builder
+      | SCall ("printf", [e]) -> 
+        L.build_call printf_func [| float_format_str ; (expr builder e) |]
+          "printf" builder
+      | SCall ("print", [e]) -> 
+        L.build_call printf_func [| string_format_str; (expr builder e) |]
+          "printf" builder
+      | SCall (f, args) ->
+        let (fdef, fdecl) = StringMap.find (cdecl.scname ^ f) method_decls in 
+          let llargs = List.rev (List.map (expr builder) (List.rev args)) in
+          let result = (match fdecl.styp with 
+                                A.Void -> ""
+                              | _ -> f ^ "_result") in
+                L.build_call fdef (Array.of_list llargs) result builder
+
+      | SField (oname, fname) ->
+        let (A.ClassT cname, cstruct_ptr) = lookup oname in
+        let (_, cdecl) = StringMap.find cname class_types in
+        let rec find x lst = (* https://stackoverflow.com/questions/31279920/finding-an-item-in-a-list-and-returning-its-index-ocaml*)
+          match lst with
+          | []     -> raise (Failure "Not Found")
+          | h :: t -> if x = h.siname then 0 else 1 + find x t in 
+        let field_index = find fname cdecl.sfields in
+        let field_ptr = L.build_struct_gep cstruct_ptr field_index "field" builder in
+          L.build_load field_ptr fname builder
+      (* | SConcall (c, args) -> 
+          let cstruct_ptr = L.build_malloc (ltype_of_typ (A.ClassT c)) c builder in 
+          (* let cstruct0 = L.build_struct_gep cstruct 0 "name?" builder in 
+          let cstruct1 = L.build_struct_gep 1 "" builder *)
+          let get_default_value field = (match field.sityp with
+                                          A.Int       -> L.const_int i32_t 0
+                                        | A.Float     -> L.const_float_of_string float_t "0.0"
+                                        | A.Str       -> L.build_global_stringptr (Scanf.unescaped " ") "str" builder
+                                        | A.Bool      -> L.const_int i1_t 0
+                                        (* | A.ClassT(c) -> c (* TODO: null value?? *) *)
+                                        ``d | _           -> raise (Failure "Too lazy to implement classes rn")) in  
+          let (_, cdecl) = StringMap.find c class_types in
+          let set_default_value accum field = 
+            let field_ptr = L.build_struct_gep cstruct_ptr accum "field" builder in 
+            let default_value = get_default_value field in
+            let _ = L.build_store default_value field_ptr builder in accum + 1
+          in
+          let _ = List.fold_left set_default_value 0 cdecl.sfields in 
+          let (con_method, _) = StringMap.find (cdecl.scname ^ cdecl.scname) method_decls in
+          let temp_block = L.insertion_block builder in
+          let builder = L.builder_at_end context (L.entry_block con_method) in
+          let _ = L.build_ret cstruct_ptr builder in
+          let builder = L.builder_at_end context temp_block in cstruct_ptr *)
+
+
+      (* code code code beep beep boop beep code code beep beep boop beep *)
+          
+      (* TODO: add more expr cases anremove this after adding all cases   *)
+      | _ -> L.const_int i32_t 0
+      
+    in
+
+
+    (* =========== STATEMENTS =========== *)
+    let add_terminal builder instr =
+      (* The current block where we're inserting instr *)
+      match L.block_terminator (L.insertion_block builder) with
+      Some _ -> ()
+      | None -> ignore (instr builder) in
+    
+    let rec stmt builder = function
+      SBlock sl -> List.fold_left stmt builder sl
+      (* Generate code for this expression, return resulting builder *)
+    | SExpr e -> let _ = expr builder e in builder 
+    (* | SReturn e -> let _ = L.build_ret (L.const_pointer_null (A.ClassT condecl.sconname)) builder in builder *)
+    (* TODO: Add more statements*)
+    | _ -> let _ = L.build_ret cstruct_ptr builder in builder
+    in
+
+    let builder = stmt builder (SBlock condecl.sconbody) in
+
+
+    
+    (* Add a return if the last block falls off the end *)
+    add_terminal builder (L.build_ret cstruct_ptr)
+
+  in
+  
+  let _ = List.map build_class_constructor classes in
+  
+
+
+
   let build_class_method_bodies cdecl = 
     let build_method_body mdecl = 
       let (the_method, _) = StringMap.find (cdecl.scname ^ mdecl.sfname) method_decls in
@@ -111,16 +322,20 @@ let translate (classes) =
       let local_vars =
         let add_formal m (t, n) p = 
           let () = L.set_value_name n p in
-          let local = L.build_alloca (ltype_of_typ t) n builder in
+          let local = L.build_alloca (ltype_of_typ t) n builder in (* TODO: null pointer for object formals *)
           let _  = L.build_store p local builder in
             StringMap.add n (t, local) m 
         in    
           (* Allocate space for any locally declared variables and add the
           * resulting registers to our map *)
-        let add_local m (t, n) =
-          let local_var = L.build_alloca (ltype_of_typ t) n builder in (* TODO: build alloc structs here!*)
-            StringMap.add n (t, local_var) m 
+        let add_local m (t, n) = 
+          let local_var =
+            match t with
+            | A.ClassT (_) -> L.const_pointer_null (ltype_of_typ t)
+            | _ -> L.build_alloca (ltype_of_typ t) n builder 
+          in StringMap.add n (t, local_var) m 
         in
+
         (* =========== FORMAL VARIABLES ========== *)
         let formals = List.fold_left2 add_formal StringMap.empty mdecl.sformals
             (Array.to_list (L.params the_method)) in
@@ -204,7 +419,7 @@ let translate (classes) =
                   L.build_call fdef (Array.of_list llargs) result builder
 
         | SField (oname, fname) ->
-          let (ClassT cname, cstruct_ptr) = lookup oname in
+          let (A.ClassT cname, cstruct_ptr) = lookup oname in
           let (_, cdecl) = StringMap.find cname class_types in
           let rec find x lst = (* https://stackoverflow.com/questions/31279920/finding-an-item-in-a-list-and-returning-its-index-ocaml*)
             match lst with

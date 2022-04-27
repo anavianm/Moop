@@ -11,7 +11,7 @@ class Foo {
 class Main { 
     int main () { 
         Foo foo;
-        foo = new Foo();
+        int bar;
         return 0;
     }
 }
