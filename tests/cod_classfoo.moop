@@ -1,9 +1,20 @@
+class Bar {
+    string x;
+
+    Bar Bar() {
+        print ("Bar Constructor!");
+    }
+}
+
 class Foo {
     float c;
     int x;
-
+    Bar b;
+    
 	Foo Foo() {
-      print ("Hello");
+        Bar tmp;
+        tmp = new Bar();
+        print (tmp.x);
 	}
 
 }
@@ -12,7 +23,7 @@ class Main {
     int main () { 
         Foo test;
         test = new Foo();
-        printi (test.x);
+        printf (test.c);
         return 0;
     }
 }

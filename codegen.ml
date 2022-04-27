@@ -122,9 +122,9 @@ let translate (classes) =
           let get_default_value field = (match field.sityp with
                                           A.Int       -> L.const_int i32_t 0
                                         | A.Float     -> L.const_float_of_string float_t "0.0"
-                                        | A.Str       -> L.build_global_stringptr (Scanf.unescaped " ") "str" builder
+                                        | A.Str       -> L.build_global_stringptr (Scanf.unescaped "") "str" builder
                                         | A.Bool      -> L.const_int i1_t 0
-                                        | A.ClassT(_) -> L.const_pointer_null (L.element_type (ltype_of_typ field.sityp))) in 
+                                        | A.ClassT(_) -> L.const_null (ltype_of_typ field.sityp)) in 
           let set_default_value accum field = 
             let field_ptr = L.build_struct_gep cstruct_ptr accum "field" builder in 
             let default_value = get_default_value field in
@@ -147,10 +147,7 @@ let translate (classes) =
         (* Allocate space for any locally declared variables and add the
         * resulting registers to our map *)
       let add_local m (t, n) = 
-        let local_var =
-          match t with
-          | A.ClassT (_) -> L.const_pointer_null (ltype_of_typ t)
-          | _ -> L.build_alloca (ltype_of_typ t) n builder 
+        let local_var = L.build_alloca (ltype_of_typ t) n builder 
         in StringMap.add n (t, local_var) m 
       in
 
@@ -235,17 +232,22 @@ let translate (classes) =
                                 A.Void -> ""
                               | _ -> f ^ "_result") in
                 L.build_call fdef (Array.of_list llargs) result builder
-
       | SField (oname, fname) ->
-        let (A.ClassT cname, cstruct_ptr) = lookup oname in
+        let (A.ClassT cname, double_ptr) = lookup oname in
         let (_, cdecl) = StringMap.find cname class_types in
-        let rec find x lst =  (* https://stackoverflow.com/questions/31279920/finding-an-item-in-a-list-and-returning-its-index-ocaml*)
+        let rec find x lst = (* https://stackoverflow.com/questions/31279920/finding-an-item-in-a-list-and-returning-its-index-ocaml*)
           match lst with
           | []     -> raise (Failure "Not Found")
           | h :: t -> if x = h.siname then 0 else 1 + find x t in 
         let field_index = find fname cdecl.sfields in
-        let field_ptr = L.build_struct_gep cstruct_ptr field_index "field" builder in
+        let single_ptr = L.build_load double_ptr "tmp" builder in
+        let field_ptr = L.build_struct_gep single_ptr field_index "field" builder in
           L.build_load field_ptr fname builder
+      | SConcall (c, args) -> 
+        let (cdef, condecl) = StringMap.find c constr_decls in 
+          let llargs = List.rev (List.map (expr builder) (List.rev args)) in
+          let result = c ^ "_constr_result" in 
+            L.build_call cdef (Array.of_list llargs) result builder
           
       (* TODO: add more expr cases anremove this after adding all cases   *)
       | _ -> L.const_int i32_t 0
@@ -264,8 +266,7 @@ let translate (classes) =
       SBlock sl -> List.fold_left stmt builder sl
       (* Generate code for this expression, return resulting builder *)
     | SExpr e -> let _ = expr builder e in builder 
-    (* | SReturn e -> let _ = L.build_ret (L.const_pointer_null (A.ClassT condecl.sconname)) builder in builder *)
-    (* TODO: Add more statements*)
+    (* TODO more statments*)
     | _ -> let _ = L.build_ret cstruct_ptr builder in builder
     in
 
@@ -303,10 +304,7 @@ let translate (classes) =
           (* Allocate space for any locally declared variables and add the
           * resulting registers to our map *)
         let add_local m (t, n) = 
-          let local_var =
-            match t with
-            (* | A.ClassT (_) -> L.build_alloca (L.element_type (ltype_of_typ t)) n builder  *)
-            | _ -> L.build_alloca (ltype_of_typ t) n builder 
+          let local_var = L.build_alloca (ltype_of_typ t) n builder 
           in StringMap.add n (t, local_var) m 
         in
 
