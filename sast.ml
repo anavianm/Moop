@@ -13,9 +13,13 @@ and sx =
   | SUnop of uop * sexpr
   | SAssign of string * sexpr
   | SCall of string * sexpr list
+  | SField of string * string
   | SMcall of string * string * sexpr list
   | SConcall of string * sexpr list
   | SSupcall of sexpr list
+  | SThisId of string
+  | SThisAssign of string * sexpr
+  | SThisMcall of string * sexpr list
   | SNoexpr
 
 type sstmt =
@@ -43,10 +47,18 @@ type smdecl = {
     sbody    : sstmt list;
 }
 
+type scondecl = {
+    sconname    : string;
+    sconformals : bind list;
+    sconlocals  : bind list;
+    sconbody    : sstmt list;
+}
+
 type scdecl =  { 
     scname   : string; 
     spname   : string option; 
     sfields  : sivdecl list;
+    sconstr  : scondecl option;
     smethods : smdecl list;
 }
 
@@ -69,12 +81,17 @@ let rec string_of_sexpr (t, e) =
   | SAssign(v, e) -> v ^ " = " ^ string_of_sexpr e
   | SCall(f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
+  | SField (f1, f2) ->
+      f1 ^ "." ^ f2
   | SMcall(s1, s2, el) -> 
       s1 ^ "." ^ s2 ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
   | SConcall(s, el) -> 
       s ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
   | SSupcall (el) -> 
       "super (" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
+  | SThisId(s) -> "this." ^ s
+  | SThisAssign (v, e) -> "this." ^ v ^ " = " ^ string_of_sexpr e
+  | SThisMcall (m, el) -> "this." ^ m ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
   | SNoexpr -> ""
 				  ) ^ ")"				     
 
@@ -112,15 +129,28 @@ let string_of_sivdecl ivdecl =
   in 
   tilda ^ string_of_typ ivdecl.sityp ^ " "^ ivdecl.siname  ^ ";\n"
 
+let string_of_scondecl condecl =
+  condecl.sconname ^ "(" ^ String.concat ", " (List.map snd condecl.sconformals) ^
+  ")\n{\n" ^
+  String.concat "" (List.map string_of_vdecl condecl.sconlocals) ^
+  String.concat "" (List.map string_of_sstmt condecl.sconbody) ^
+  "}\n"
+
 let string_of_scdecl cdecl =
   let extext = match cdecl.spname with
     | None   -> ""
     | Some s -> " <- " ^ s
   in
+  let context = match cdecl.sconstr with
+    | None -> ""
+    | Some s -> string_of_scondecl s
+  in
   "class " ^ cdecl.scname ^ extext ^ " {\n" ^
   String.concat "" (List.map string_of_sivdecl cdecl.sfields) ^
+  context ^
   String.concat "\n " (List.map string_of_smdecl cdecl.smethods) ^
   "}\n"
+
 
 let string_of_sprogram program =
   String.concat "" (List.map string_of_scdecl program) ^ "\n"

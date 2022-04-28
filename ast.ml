@@ -17,15 +17,6 @@ type ivdecl = {
   iname : string;
 }
 
-(* type odecl = { 
-  pub   : bool;
-  cname : string;
-  oname : string;
-} *)
-
-(* TODO 
-    Class Methods (DOT) 
-    Constructor Calls *)
 type expr =
     Literal of int
   | Fliteral of string
@@ -36,9 +27,13 @@ type expr =
   | Unop of uop * expr
   | Assign of string * expr
   | Call of string * expr list
+  | Field of string * string
   | Mcall of string * string * expr list
   | Concall of string * expr list
   | Supcall of expr list
+  | ThisId of string 
+  | ThisAssign of string * expr
+  | ThisMcall of string * expr list
   | Noexpr
 
 type stmt =
@@ -57,7 +52,7 @@ type mdecl = {
     formals : bind list;
     locals  : bind list;
     body    : stmt list;
-  }
+}
 
 type cdecl =  { 
     cname   : string; 
@@ -110,10 +105,15 @@ let rec string_of_expr = function
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | Mcall(o, f, el) -> 
       o ^ "." ^ f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+  | Field (f1, f2) -> 
+      f1 ^ "." ^ f2 
   | Concall(c, el) ->
       c ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | Supcall(el)    -> 
       "super (" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+  | ThisId(s) -> "this." ^ s
+  | ThisAssign (v, e) -> "this." ^ v ^ " = " ^ string_of_expr e
+  | ThisMcall (m, el) -> "this." ^ m ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | Noexpr -> ""
 
 let rec string_of_stmt = function
@@ -168,6 +168,6 @@ let string_of_cdecl cdecl =
   String.concat "" (List.map string_of_ivdecl cdecl.fields) ^
   String.concat "\n " (List.map string_of_mdecl cdecl.methods) ^
   "}\n"
-
+  
 let string_of_program program =
   String.concat "" (List.map string_of_cdecl program) ^ "\n"

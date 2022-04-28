@@ -37,6 +37,20 @@ decls:
    /* nothing */     { []       }
   | decls cdecl      { $2 :: $1 }
 
+// cdecl:
+//   CLASS ID extends LBRACE cbodydecls RBRACE
+//     { let (f, c, m) = $5 in { cname = $2;
+//     pname = $3;
+//     fields = List.rev f;
+//     constr = c;
+//     methods = List.rev m; } }
+
+//  cbodydecls:
+//    /* nothing */      { ([], None, [])           }
+//  | cbodydecls ivdecl  { let (f, c, m) = $1 in (($2 :: f), c, m) }
+//  | cbodydecls condecl { let (f, c, m) = $1 in (f, $2, m) }
+//  | cbodydecls mdecl   { let (f, c, m) = $1 in (f, c, ($2 :: m)) }
+
 cdecl:
   CLASS ID extends LBRACE cbodydecls RBRACE
     { { cname = $2;
@@ -48,9 +62,9 @@ cbodydecls:
    /* nothing */     { ([], [])                 }
  | cbodydecls ivdecl { (($2 :: fst $1), snd $1) }
  | cbodydecls mdecl  { (fst $1, ($2 :: snd $1)) }
-
+  
 mdecl:
-   invert typ ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
+  invert typ ID LPAREN formals_opt RPAREN LBRACE vdecl_list stmt_list RBRACE
      { { priv = $1;
       typ = $2;
 	    fname = $3;
@@ -85,10 +99,9 @@ vdecl_list:
 
 vdecl:
    typ ID SEMI { ($1, $2) }
-   
 
 ivdecl: 
-   invert typ ID SEMI { {
+  invert typ ID SEMI { {
      pub  = $1;
      ityp = $2;
      iname = $3;
@@ -142,11 +155,12 @@ expr:
   | ID ASSIGN expr                        { Assign($1, $3)         }
   | ID LPAREN args_opt RPAREN             { Call($1, $3)           }
   | ID DOT ID LPAREN args_opt RPAREN      { Mcall($1, $3, $5)      }
+  | ID DOT ID                             { Field($1, $3)          }
   | NEW ID LPAREN args_opt RPAREN         { Concall ($2, $4)       }
   | SUPER LPAREN args_opt RPAREN          { Supcall($3)            }
-  | THIS DOT ID                           { Id($3)                 }
-  | THIS DOT ID ASSIGN expr               { Assign($3, $5)         }
-  | THIS DOT ID LPAREN args_opt RPAREN    { Call($3, $5)           }
+  | THIS DOT ID                           { ThisId($3)             }
+  | THIS DOT ID ASSIGN expr               { ThisAssign($3, $5)     }
+  | THIS DOT ID LPAREN args_opt RPAREN    { ThisMcall($3, $5)      }
   | LPAREN expr RPAREN                    { $2                     }
 
 args_opt:

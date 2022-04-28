@@ -1,13 +1,23 @@
 class Foo {
-	Foo Foo() {
-        ;
-	}
+    float c;
+    int x;
+    
+    Foo Foo(int x) {   
+        this.x = x;
+    }
+
+    int getX() {
+        return this.x;
+    }
+
 }
 
 class Main { 
     int main () { 
-        Foo foo;
-        foo = new Foo();
+        Foo test;
+        test = new Foo(45);
+        printi (test.getX());
+        return 0;
     }
 }
 
