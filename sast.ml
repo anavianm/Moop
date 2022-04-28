@@ -17,6 +17,9 @@ and sx =
   | SMcall of string * string * sexpr list
   | SConcall of string * sexpr list
   | SSupcall of sexpr list
+  | SThisId of string
+  | SThisAssign of string * sexpr
+  | SThisMcall of string * sexpr list
   | SNoexpr
 
 type sstmt =
@@ -86,6 +89,9 @@ let rec string_of_sexpr (t, e) =
       s ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
   | SSupcall (el) -> 
       "super (" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
+  | SThisId(s) -> "this." ^ s
+  | SThisAssign (v, e) -> "this." ^ v ^ " = " ^ string_of_sexpr e
+  | SThisMcall (m, el) -> "this." ^ m ^ "(" ^ String.concat ", " (List.map string_of_sexpr el) ^ ")"
   | SNoexpr -> ""
 				  ) ^ ")"				     
 

@@ -118,6 +118,7 @@ let check (classes) =
     (* Check Fields *)
 
     let fields' = check_ivdecls currClass.fields in
+    let fields_table = List.fold_left (fun m ivdecl -> StringMap.add ivdecl.siname ivdecl.sityp m) StringMap.empty fields' in
 
     
     (* Check Constructor *)
@@ -226,6 +227,14 @@ let check (classes) =
         in 
         let args' = List.map2 check_call cd.formals args
           in (ClassT cd.fname, SConcall(cname, args'))
+
+    | ThisId s -> (type_of_identifier fields_table s, SThisId s)
+    | ThisAssign(var, e) as ex -> 
+      let lt = type_of_identifier fields_table var
+      and (rt, e') = expr symbols e in
+      let err = "illegal assignment " ^ string_of_typ lt ^ " = " ^ 
+        string_of_typ rt ^ " in " ^ string_of_expr ex
+      in (check_assign lt rt err, SThisAssign(var, (rt, e')))
                   
     (* | Mcall(objectId, mname, args) as mcall -> 
         let md = find_method objectId mname in 

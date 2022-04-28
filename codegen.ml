@@ -248,8 +248,25 @@ let translate (classes) =
           let llargs = List.rev (List.map (expr builder) (List.rev args)) in
           let result = c ^ "_constr_result" in 
             L.build_call cdef (Array.of_list llargs) result builder
+      | SThisId s -> 
+        let rec find x lst =
+          match lst with
+          | []     -> raise (Failure "Not Found")
+          | h :: t -> if x = h.siname then 0 else 1 + find x t in 
+        let field_index = find s cdecl.sfields in
+        let field_ptr = L.build_struct_gep cstruct_ptr field_index "field" builder in
+          L.build_load field_ptr s builder
+      | SThisAssign (s, e) -> let e' = expr builder e in
+                          let rec find x lst =
+                            match lst with
+                            | []     -> raise (Failure "Not Found")
+                            | h :: t -> if x = h.siname then 0 else 1 + find x t in 
+                          let field_index = find s cdecl.sfields in
+                          let field_ptr = L.build_struct_gep cstruct_ptr field_index "field" builder in
+                          L.build_store e' field_ptr builder
           
       (* TODO: add more expr cases anremove this after adding all cases   *)
+
       | _ -> L.const_int i32_t 0
       
     in

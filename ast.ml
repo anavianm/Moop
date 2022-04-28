@@ -31,6 +31,9 @@ type expr =
   | Mcall of string * string * expr list
   | Concall of string * expr list
   | Supcall of expr list
+  | ThisId of string 
+  | ThisAssign of string * expr
+  | ThisMcall of string * expr list
   | Noexpr
 
 type stmt =
@@ -108,6 +111,9 @@ let rec string_of_expr = function
       c ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | Supcall(el)    -> 
       "super (" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+  | ThisId(s) -> "this." ^ s
+  | ThisAssign (v, e) -> "this." ^ v ^ " = " ^ string_of_expr e
+  | ThisMcall (m, el) -> "this." ^ m ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | Noexpr -> ""
 
 let rec string_of_stmt = function
