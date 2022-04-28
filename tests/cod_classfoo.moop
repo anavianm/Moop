@@ -1,5 +1,4 @@
 class Foo {
-    float c;
     int x;
     
     Foo Foo(int x) {   
@@ -10,12 +9,18 @@ class Foo {
         return this.x;
     }
 
+    void setX(int x) {
+        this.x = x;
+    }
+
 }
 
 class Main { 
     int main () { 
         Foo test;
         test = new Foo(45);
+        printi (test.getX());
+        test.setX(30);
         printi (test.getX());
         return 0;
     }

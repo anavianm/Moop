@@ -265,7 +265,7 @@ let translate (classes) =
                           let field_index = find s cdecl.sfields in
                           let field_ptr = L.build_struct_gep cstruct_ptr field_index "field" builder in
                           L.build_store e' field_ptr builder
-
+      (* TODO: add Mcall*)
       (* TODO: add more expr cases anremove this after adding all cases   *)
 
       | _ -> L.const_int i32_t 0
@@ -409,7 +409,6 @@ let translate (classes) =
                                   A.Void -> ""
                                 | _ -> f ^ "_result") in
                   L.build_call fdef (Array.of_list llargs) result builder
-
         | SField (oname, fname) ->
           let (A.ClassT cname, double_ptr) = lookup oname in
           let (_, cdecl) = StringMap.find cname class_types in
@@ -484,7 +483,62 @@ let translate (classes) =
                             | _ -> L.build_ret (expr builder e) builder 
                      in builder
       (* TODO: Add more statements*)
-      | _ -> let _ = L.build_ret (L.const_int i32_t 0) builder in builder
+
+      | SIf (predicate, then_stmt, else_stmt) ->
+        let bool_val = expr builder predicate in
+        (* Add "merge" basic block to our function's list of blocks *)
+          let merge_bb = L.append_block context "merge" the_method in
+          (* Partial function used to generate branch to merge block *) 
+          let branch_instr = L.build_br merge_bb in
+
+            (* Same for "then" basic block *)
+          let then_bb = L.append_block context "then" the_method in
+            (* Position builder in "then" block and build the statement *)
+          let then_builder = stmt (L.builder_at_end context then_bb) then_stmt in
+            (* Add a branch to the "then" block (to the merge block) 
+              if a terminator doesn't already exist for the "then" block *)
+        let () = add_terminal then_builder branch_instr in
+
+            (* Identical to stuff we did for "then" *)
+        let else_bb = L.append_block context "else" the_method in
+            let else_builder = stmt (L.builder_at_end context else_bb) else_stmt in
+        let () = add_terminal else_builder branch_instr in
+
+            (* Generate initial branch instruction perform the selection of "then"
+            or "else". Note we're using the builder we had access to at the start
+            of this alternative. *)
+        let _ = L.build_cond_br bool_val then_bb else_bb builder in
+            (* Move to the merge block for further instruction building *)
+        L.builder_at_end context merge_bb
+
+    | SWhile (predicate, body) ->
+      (* First create basic block for condition instructions -- this will
+      serve as destination in the case of a loop *)
+      let pred_bb = L.append_block context "while" the_method in
+            (* In current block, branch to predicate to execute the condition *)
+      let _ = L.build_br pred_bb builder in
+
+      (* Create the body's block, generate the code for it, and add a branch
+      back to the predicate block (we always jump back at the end of a while
+      loop's body, unless we returned or something) *)
+      let body_bb = L.append_block context "while_body" the_method in
+            let while_builder = stmt (L.builder_at_end context body_bb) body in
+      let () = add_terminal while_builder (L.build_br pred_bb) in
+
+            (* Generate the predicate code in the predicate block *)
+      let pred_builder = L.builder_at_end context pred_bb in
+      let bool_val = expr pred_builder predicate in
+
+            (* Hook everything up *)
+      let merge_bb = L.append_block context "merge" the_method in
+      let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
+      L.builder_at_end context merge_bb
+
+    (* Implement for loops as while loops! *)
+    | SFor (e1, e2, e3, body) -> stmt builder
+      ( SBlock [SExpr e1 ; SWhile (e2, SBlock [body ; SExpr e3]) ] )
+    (* in *)
+      (* | _ -> let _ = L.build_ret (L.const_int i32_t 0) builder in builder *)
       in
 
       let builder = stmt builder (SBlock mdecl.sbody) in
