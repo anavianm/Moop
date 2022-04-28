@@ -2,17 +2,21 @@ class Foo {
     float c;
     int x;
     
-	Foo Foo() {   
-        this.x = 10;
-	}
+    Foo Foo(int x) {   
+        this.x = x;
+    }
+
+    int getX() {
+        return this.x;
+    }
 
 }
 
 class Main { 
     int main () { 
         Foo test;
-        test = new Foo();
-        printi (test.x);
+        test = new Foo(45);
+        printi (test.getX());
         return 0;
     }
 }

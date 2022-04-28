@@ -60,7 +60,8 @@ let check (classes) =
         and make_err er = raise (Failure er)
         in match md with (* No duplicate functions or redefinitions of built-ins *)
               _ when (compare md.fname "Main") == 0 -> make_err main_err
-            | _ when StringMap.mem cd.cname map -> make_err dup_err  
+            | _ when (compare cd.cname md.fname) != 0 -> map
+            | _ when StringMap.mem cd.cname map -> make_err dup_err    
             | _ when (compare cd.cname md.fname) == 0 -> StringMap.add cd.cname md map
             | _ -> map
       in List.fold_left add_constr map cd.methods 
@@ -71,7 +72,7 @@ let check (classes) =
       let add_field map ivd =
         StringMap.add (cd.cname ^ ivd.iname) ivd.ityp map
       in List.fold_left add_field map cd.fields
-    in List.fold_left add_class_fields StringMap.empty classes in
+    in List.fold_left add_class_fields StringMap.empty classes in 
   
   let check_class (currClass) = 
     (* Check if a certain kind of binding has void type or is a duplicate
@@ -234,22 +235,22 @@ let check (classes) =
       and (rt, e') = expr symbols e in
       let err = "illegal assignment " ^ string_of_typ lt ^ " = " ^ 
         string_of_typ rt ^ " in " ^ string_of_expr ex
-      in (check_assign lt rt err, SThisAssign(var, (rt, e')))
-                  
-    (* | Mcall(objectId, mname, args) as mcall -> 
-        let md = find_method objectId mname in 
-        let param_length = List.length md.formals in
-        if List.length args != param_length then
-          raise (Failure ("expecting " ^ string_of_int param_length ^ 
-                          " arguments in " ^ string_of_expr mcall))
-        else let check_call (mt, _) e = 
-          let (et, e') = expr e in 
-          let err = "illegal argument found " ^ string_of_typ et ^
-            " expected " ^ string_of_typ mt ^ " in " ^ string_of_expr e
-          in (check_assign mt et err, e')
-        in 
-        let args' = List.map2 check_call md.formals args
-        in (md.typ, SMCall(objectId, mname, args')) *)
+      in (check_assign lt rt err, SThisAssign(var, (rt, e')))                
+    | Mcall(objectId, mname, args) as mcall -> 
+      let ClassT classname = type_of_identifier symbols objectId in
+      let md = find_method classname mname in 
+      let param_length = List.length md.formals in
+      if List.length args != param_length then
+        raise (Failure ("expecting " ^ string_of_int param_length ^ 
+                        " arguments in " ^ string_of_expr mcall))
+      else let check_call (mt, _) e = 
+        let (et, e') = expr symbols e in 
+        let err = "illegal argument found " ^ string_of_typ et ^
+          " expected " ^ string_of_typ mt ^ " in " ^ string_of_expr e
+        in (check_assign mt et err, e')
+      in 
+      let args' = List.map2 check_call md.formals args
+      in (md.typ, SMcall(objectId, mname, args'))
     | _ -> raise (Failure "fail!!!!")
 
     in

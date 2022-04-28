@@ -87,9 +87,10 @@ let translate (classes) =
     let get_class_method m cdecl = 
       let method_decl m mdecl = 
         (* String map key is the class name + method name *)
-        let name = cdecl.scname ^ mdecl.sfname
-        and formal_types = 
-          Array.of_list(List.map (fun (t,_) -> ltype_of_typ t) mdecl.sformals) in
+        let name = cdecl.scname ^ mdecl.sfname in
+        let obj_formals = if (compare name "Mainmain") == 0 then mdecl.sformals
+        else (A.ClassT cdecl.scname, "objptr") :: mdecl.sformals in
+        let formal_types = Array.of_list(List.map (fun (t,_) -> ltype_of_typ t) obj_formals) in
         let mtype = L.function_type (ltype_of_typ mdecl.styp) formal_types in
         StringMap.add name (L.define_function name mtype the_module, mdecl) m
       in
@@ -217,17 +218,17 @@ let translate (classes) =
           (* TODO: don't use build_not *)
           | _                      -> L.build_not) e' "tmp" builder
       | SCall ("printi", [e]) | SCall ("printb", [e]) ->
-        L.build_call printf_func [| int_format_str ; (expr builder e) |]
+        L.build_call printf_func [| int_format_str ; (expr  builder e) |]
           "printf" builder
       | SCall ("printf", [e]) -> 
-        L.build_call printf_func [| float_format_str ; (expr builder e) |]
+        L.build_call printf_func [| float_format_str ; (expr  builder e) |]
           "printf" builder
       | SCall ("print", [e]) -> 
-        L.build_call printf_func [| string_format_str; (expr builder e) |]
+        L.build_call printf_func [| string_format_str; (expr  builder e) |]
           "printf" builder
       | SCall (f, args) ->
         let (fdef, fdecl) = StringMap.find (cdecl.scname ^ f) method_decls in 
-          let llargs = List.rev (List.map (expr builder) (List.rev args)) in
+          let llargs = List.rev (List.map (expr  builder) (List.rev args)) in
           let result = (match fdecl.styp with 
                                 A.Void -> ""
                               | _ -> f ^ "_result") in
@@ -264,7 +265,7 @@ let translate (classes) =
                           let field_index = find s cdecl.sfields in
                           let field_ptr = L.build_struct_gep cstruct_ptr field_index "field" builder in
                           L.build_store e' field_ptr builder
-          
+
       (* TODO: add more expr cases anremove this after adding all cases   *)
 
       | _ -> L.const_int i32_t 0
@@ -326,7 +327,9 @@ let translate (classes) =
         in
 
         (* =========== FORMAL VARIABLES ========== *)
-        let formals = List.fold_left2 add_formal StringMap.empty mdecl.sformals
+        let updated_formals = if (compare (cdecl.scname ^ mdecl.sfname) "Mainmain") == 0 then mdecl.sformals
+        else (A.ClassT cdecl.scname, "objptr") :: mdecl.sformals in
+        let formals = List.fold_left2 add_formal StringMap.empty updated_formals
             (Array.to_list (L.params the_method)) in
         List.fold_left add_local formals mdecl.slocals 
       in
@@ -423,8 +426,38 @@ let translate (classes) =
             let llargs = List.rev (List.map (expr builder) (List.rev args)) in
             let result = c ^ "_constr_result" in 
               L.build_call cdef (Array.of_list llargs) result builder
-
-
+        | SMcall (oname, mname, args) -> 
+          let A.ClassT cname = fst (lookup oname) in
+          let (fdef, fdecl) = StringMap.find (cname ^ mname) method_decls in
+          let (_, double_ptr) = lookup oname in
+          let single_ptr = L.build_load double_ptr "tmp" builder in
+          let llargs = List.rev (List.map (expr builder) (List.rev args)) in
+          let new_llargs = single_ptr :: llargs in
+          let result = (match fdecl.styp with 
+                          A.Void -> ""
+                        | _ -> mname ^ "_result") in
+                L.build_call fdef (Array.of_list new_llargs) result builder
+        | SThisId s -> 
+          let (_, double_ptr) = lookup "objptr" in
+          let single_ptr = L.build_load double_ptr "tmp" builder in
+          let rec find x lst =
+            match lst with
+            | []     -> raise (Failure "Not Found")
+            | h :: t -> if x = h.siname then 0 else 1 + find x t in 
+          let field_index = find s cdecl.sfields in
+          let field_ptr = L.build_struct_gep single_ptr field_index "field" builder in
+            L.build_load field_ptr s builder
+        | SThisAssign (s, e) ->
+          let (_, double_ptr) = lookup "objptr" in
+          let single_ptr = L.build_load double_ptr "tmp" builder in
+          let e' = expr builder e in
+          let rec find x lst =
+            match lst with
+            | []     -> raise (Failure "Not Found")
+            | h :: t -> if x = h.siname then 0 else 1 + find x t in 
+          let field_index = find s cdecl.sfields in
+          let field_ptr = L.build_struct_gep single_ptr field_index "field" builder in
+          L.build_store e' field_ptr builder
         (* code code code beep beep boop beep code code beep beep boop beep *)
             
         (* TODO: add more expr cases anremove this after adding all cases   *)
