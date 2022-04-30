@@ -27,6 +27,7 @@ type sstmt =
   | SExpr of sexpr
   | SReturn of sexpr
   | SIf of sexpr * sstmt * sstmt
+  | SUnless of sexpr * sstmt * sstmt
   | SFor of sexpr * sexpr * sexpr * sstmt
   | SWhile of sexpr * sstmt
   | SNostmt 
@@ -103,6 +104,10 @@ let rec string_of_sstmt = function
   | SIf(e, s, SBlock([])) ->
       "if (" ^ string_of_sexpr e ^ ")\n" ^ string_of_sstmt s
   | SIf(e, s1, s2) ->  "if (" ^ string_of_sexpr e ^ ")\n" ^
+      string_of_sstmt s1 ^ "else\n" ^ string_of_sstmt s2
+  | SUnless(e, s, SBlock([])) ->
+      "unless (" ^ string_of_sexpr e ^ ")\n" ^ string_of_sstmt s
+  | SUnless(e, s1, s2) ->  "unless (" ^ string_of_sexpr e ^ ")\n" ^
       string_of_sstmt s1 ^ "else\n" ^ string_of_sstmt s2
   | SFor(e1, e2, e3, s) ->
       "for (" ^ string_of_sexpr e1  ^ " ; " ^ string_of_sexpr e2 ^ " ; " ^

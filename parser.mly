@@ -7,7 +7,7 @@ open Ast
 %token SEMI LPAREN RPAREN LBRACE RBRACE COMMA
 %token PLUS MINUS TIMES DIVIDE ASSIGN
 %token NOT EQ NEQ LT LEQ GT GEQ AND OR
-%token RETURN IF ELSE FOR WHILE INT BOOL FLOAT VOID STR
+%token RETURN UNLESS IF ELSE FOR WHILE INT BOOL FLOAT VOID STR
 %token CLASS SUPER THIS EXTENDS INVERT DOT NEW
 %token <int> LITERAL
 %token <bool> BLIT
@@ -117,15 +117,17 @@ stmt_list:
 
 
 stmt:
-    expr SEMI                               { Expr $1               }
-  | RETURN expr_opt SEMI                    { Return $2             }
-  | empty_statement                         { Nostmt                }
-  | LBRACE stmt_list RBRACE                 { Block(List.rev $2)    }
-  | IF LPAREN expr RPAREN stmt %prec NOELSE { If($3, $5, Block([])) }
-  | IF LPAREN expr RPAREN stmt ELSE stmt    { If($3, $5, $7)        }
+    expr SEMI                                       { Expr $1                                 }
+  | RETURN expr_opt SEMI                            { Return $2                               }
+  | empty_statement                                 { Nostmt                                  }
+  | LBRACE stmt_list RBRACE                         { Block(List.rev $2)                      }
+  | IF LPAREN expr RPAREN stmt %prec NOELSE         { If($3, $5, Block([]))                   }
+  | IF LPAREN expr RPAREN stmt ELSE stmt            { If($3, $5, $7)                          }
+  | UNLESS LPAREN expr RPAREN stmt %prec NOELSE     { Unless(Unop(Not, $3), $5, Block([]))    }
+  | UNLESS LPAREN expr RPAREN stmt ELSE stmt        { Unless(Unop(Not, $3), $5, $7)           }
   | FOR LPAREN expr_opt SEMI expr SEMI expr_opt RPAREN stmt
-                                            { For($3, $5, $7, $9)   }
-  | WHILE LPAREN expr RPAREN stmt           { While($3, $5)         }
+                                                    { For($3, $5, $7, $9)                     }
+  | WHILE LPAREN expr RPAREN stmt                   { While($3, $5)                           }
 
 
 empty_statement: SEMI { Nostmt }

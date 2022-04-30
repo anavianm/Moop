@@ -141,7 +141,7 @@ let translate (classes) =
     let local_vars =
       let add_formal m (t, n) p = 
         let () = L.set_value_name n p in
-        let local = L.build_alloca (ltype_of_typ t) n builder in (* TODO: null pointer for object formals *)
+        let local = L.build_alloca (ltype_of_typ t) n builder in
         let _  = L.build_store p local builder in
           StringMap.add n (t, local) m 
       in    
@@ -294,7 +294,6 @@ let translate (classes) =
       SBlock sl -> List.fold_left stmt builder sl
       (* Generate code for this expression, return resulting builder *)
     | SExpr e -> let _ = expr builder e in builder 
-    (* TODO more statments*)
     | SIf (predicate, then_stmt, else_stmt) ->
       let bool_val = expr builder predicate in
       (* Add "merge" basic block to our function's list of blocks *)
@@ -382,7 +381,7 @@ let translate (classes) =
       let local_vars =
         let add_formal m (t, n) p = 
           let () = L.set_value_name n p in
-          let local = L.build_alloca (ltype_of_typ t) n builder in (* TODO: null pointer for object formals *)
+          let local = L.build_alloca (ltype_of_typ t) n builder in
           let _  = L.build_store p local builder in
             StringMap.add n (t, local) m 
         in    
@@ -549,8 +548,6 @@ let translate (classes) =
                               (* Build return statement *)
                             | _ -> L.build_ret (expr builder e) builder 
                      in builder
-      (* TODO: Add more statements*)
-
       | SIf (predicate, then_stmt, else_stmt) ->
         let bool_val = expr builder predicate in
         (* Add "merge" basic block to our function's list of blocks *)
@@ -577,6 +574,33 @@ let translate (classes) =
         let _ = L.build_cond_br bool_val then_bb else_bb builder in
             (* Move to the merge block for further instruction building *)
         L.builder_at_end context merge_bb
+    
+    | SUnless (predicate, then_stmt, else_stmt) ->
+      let bool_val = expr builder predicate in
+      (* Add "merge" basic block to our function's list of blocks *)
+        let merge_bb = L.append_block context "merge" the_method in
+        (* Partial function used to generate branch to merge block *) 
+        let branch_instr = L.build_br merge_bb in
+
+          (* Same for "then" basic block *)
+        let then_bb = L.append_block context "then" the_method in
+          (* Position builder in "then" block and build the statement *)
+        let then_builder = stmt (L.builder_at_end context then_bb) then_stmt in
+          (* Add a branch to the "then" block (to the merge block) 
+            if a terminator doesn't already exist for the "then" block *)
+      let () = add_terminal then_builder branch_instr in
+
+          (* Identical to stuff we did for "then" *)
+      let else_bb = L.append_block context "else" the_method in
+          let else_builder = stmt (L.builder_at_end context else_bb) else_stmt in
+      let () = add_terminal else_builder branch_instr in
+
+          (* Generate initial branch instruction perform the selection of "then"
+          or "else". Note we're using the builder we had access to at the start
+          of this alternative. *)
+      let _ = L.build_cond_br bool_val then_bb else_bb builder in
+          (* Move to the merge block for further instruction building *)
+      L.builder_at_end context merge_bb
 
     | SWhile (predicate, body) ->
       (* First create basic block for condition instructions -- this will

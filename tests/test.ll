@@ -1,7 +1,6 @@
 ; ModuleID = 'MicroOOP'
 source_filename = "MicroOOP"
 
-%Bar = type { i32 }
 %Foo = type { i32 }
 
 @main_ptr = global i32 ()* @main
@@ -17,12 +16,7 @@ source_filename = "MicroOOP"
 @fmt.9 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @fmt.10 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
 @fmt.11 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@fmt.12 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-@fmt.13 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
-@fmt.14 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@fmt.15 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-@fmt.16 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
-@fmt.17 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@str = private unnamed_addr constant [5 x i8] c"here\00", align 1
 
 declare i32 @printf(i8*, ...)
 
@@ -30,16 +24,6 @@ define i32 @main() {
 entry:
   %Mainmain_result = call i32 @Mainmain()
   ret i32 0
-}
-
-define i32 @BargetA(%Bar* %objptr) {
-entry:
-  %objptr1 = alloca %Bar*
-  store %Bar* %objptr, %Bar** %objptr1
-  %tmp = load %Bar*, %Bar** %objptr1
-  %field = getelementptr inbounds %Bar, %Bar* %tmp, i32 0, i32 0
-  %a = load i32, i32* %field
-  ret i32 %a
 }
 
 define i32 @FoogetX(%Foo* %objptr) {
@@ -72,24 +56,57 @@ entry:
   store %Foo* %Foo_constr_result, %Foo** %test
   %tmp = load %Foo*, %Foo** %test
   %getX_result = call i32 @FoogetX(%Foo* %tmp)
-  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.15, i32 0, i32 0), i32 %getX_result)
-  %tmp1 = load %Foo*, %Foo** %test
-  call void @FoosetX(%Foo* %tmp1, i32 30)
+  %tmp1 = icmp eq i32 %getX_result, 45
+  br i1 %tmp1, label %then, label %else
+
+merge:                                            ; preds = %else, %then
   %tmp2 = load %Foo*, %Foo** %test
   %getX_result3 = call i32 @FoogetX(%Foo* %tmp2)
-  %printf4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.15, i32 0, i32 0), i32 %getX_result3)
-  ret i32 0
-}
+  %tmp4 = icmp eq i32 %getX_result3, 30
+  %tmp5 = xor i1 %tmp4, true
+  br i1 %tmp5, label %then7, label %else12
 
-define %Bar* @Bar() {
-entry:
-  %malloccall = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
-  %Bar = bitcast i8* %malloccall to %Bar*
-  %field = getelementptr inbounds %Bar, %Bar* %Bar, i32 0, i32 0
-  store i32 0, i32* %field
-  %field1 = getelementptr inbounds %Bar, %Bar* %Bar, i32 0, i32 0
-  store i32 10, i32* %field1
-  ret %Bar* %Bar
+then:                                             ; preds = %entry
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.11, i32 0, i32 0), i8* getelementptr inbounds ([5 x i8], [5 x i8]* @str, i32 0, i32 0))
+  br label %merge
+
+else:                                             ; preds = %entry
+  br label %merge
+
+merge6:                                           ; preds = %else12, %then7
+  %tmp13 = load %Foo*, %Foo** %test
+  %getX_result14 = call i32 @FoogetX(%Foo* %tmp13)
+  %tmp15 = icmp eq i32 %getX_result14, 10
+  %tmp16 = xor i1 %tmp15, true
+  br i1 %tmp16, label %then18, label %else23
+
+then7:                                            ; preds = %merge
+  %tmp8 = load %Foo*, %Foo** %test
+  call void @FoosetX(%Foo* %tmp8, i32 10)
+  %tmp9 = load %Foo*, %Foo** %test
+  %getX_result10 = call i32 @FoogetX(%Foo* %tmp9)
+  %printf11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.9, i32 0, i32 0), i32 %getX_result10)
+  br label %merge6
+
+else12:                                           ; preds = %merge
+  br label %merge6
+
+merge17:                                          ; preds = %else23, %then18
+  %tmp24 = load %Foo*, %Foo** %test
+  %getX_result25 = call i32 @FoogetX(%Foo* %tmp24)
+  %printf26 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.9, i32 0, i32 0), i32 %getX_result25)
+  ret i32 0
+
+then18:                                           ; preds = %merge6
+  %tmp19 = load %Foo*, %Foo** %test
+  call void @FoosetX(%Foo* %tmp19, i32 15)
+  %tmp20 = load %Foo*, %Foo** %test
+  %getX_result21 = call i32 @FoogetX(%Foo* %tmp20)
+  %printf22 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.9, i32 0, i32 0), i32 %getX_result21)
+  br label %merge17
+
+else23:                                           ; preds = %merge6
+  br label %merge17
 }
 
 define %Foo* @Foo(i32 %x) {
@@ -100,32 +117,9 @@ entry:
   store i32 0, i32* %field
   %x1 = alloca i32
   store i32 %x, i32* %x1
-  %temp = alloca %Bar*
-  %i = alloca i32
-  %Bar_constr_result = call %Bar* @Bar()
-  store %Bar* %Bar_constr_result, %Bar** %temp
   %x2 = load i32, i32* %x1
   %field3 = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 0
   store i32 %x2, i32* %field3
-  store i32 0, i32* %i
-  br label %while
-
-while:                                            ; preds = %while_body, %entry
-  %i7 = load i32, i32* %i
-  %tmp8 = icmp slt i32 %i7, 1
-  br i1 %tmp8, label %while_body, label %merge
-
-while_body:                                       ; preds = %while
-  %tmp = load %Bar*, %Bar** %temp
-  %getA_result = call i32 @BargetA(%Bar* %tmp)
-  %field4 = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 0
-  store i32 %getA_result, i32* %field4
-  %i5 = load i32, i32* %i
-  %tmp6 = add i32 %i5, 1
-  store i32 %tmp6, i32* %i
-  br label %while
-
-merge:                                            ; preds = %while
   ret %Foo* %Foo
 }
 

@@ -1,27 +1,8 @@
-class Bar {
-    int a;
-
-    Bar Bar() {
-        this.a = 10;
-    }
-
-    int getA(){
-        return this.a;
-    }
-
-}
-
 class Foo {
     int x;
     
     Foo Foo(int x) { 
-        Bar temp;
-        int i;
-        temp = new Bar();  
         this.x = x;
-        for (i = 0; i < 1; i = i + 1) {
-            this.x = temp.getA();
-        }
     }
 
     int getX() {
@@ -38,9 +19,23 @@ class Main {
     int main () { 
         Foo test;
         test = new Foo(45);
-        printi (test.getX());
-        test.setX(30);
-        printi (test.getX());
+
+        if (test.getX() == 45){
+            print ("here");
+        }
+
+        unless (test.getX() == 30) {
+            test.setX(10);
+            printi(test.getX());
+        }
+
+        unless (test.getX() == 10) {
+            test.setX(15);
+            printi(test.getX());
+        }
+
+        printi(test.getX());
+
         return 0;
     }
 }
