@@ -130,9 +130,6 @@ stmt:
   | WHILE LPAREN expr RPAREN stmt                   { While($3, $5)                           }
 
 
-empty_statement: SEMI { Nostmt }
-
-
 expr_opt:
     /* nothing */ { Noexpr }
   | expr          { $1     }
