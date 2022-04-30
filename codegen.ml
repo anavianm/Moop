@@ -349,6 +349,8 @@ let translate (classes) =
     | SFor (e1, e2, e3, body) -> stmt builder
       ( SBlock [SExpr e1 ; SWhile (e2, SBlock [body ; SExpr e3]) ] )
 
+    | SNostmt -> builder
+
     | _ -> raise (Failure "Cannot return a value in a constructor.")
 
       in
@@ -603,6 +605,8 @@ let translate (classes) =
     | SFor (e1, e2, e3, body) -> stmt builder
       ( SBlock [SExpr e1 ; SWhile (e2, SBlock [body ; SExpr e3]) ] )
     (* in *)
+
+    | SNostmt -> builder
       (* | _ -> let _ = L.build_ret (L.const_int i32_t 0) builder in builder *)
       in
 
