@@ -265,8 +265,9 @@ let check (classes) =
     let rec check_stmt symbols rtype = function
         Expr e -> SExpr (expr symbols e)
       | If(p, b1, b2) -> SIf(check_bool_expr symbols p, check_stmt symbols rtype b1, check_stmt symbols rtype b2)
+      | Unless(p, b1, b2) -> SUnless(check_bool_expr symbols p, check_stmt symbols rtype b1, check_stmt symbols rtype b2)
       | For(e1, e2, e3, st) ->
-    SFor(expr symbols e1, check_bool_expr symbols e2, expr symbols e3, check_stmt symbols rtype st)
+          SFor(expr symbols e1, check_bool_expr symbols e2, expr symbols e3, check_stmt symbols rtype st)
       | While(p, s) -> SWhile(check_bool_expr symbols p, check_stmt symbols rtype s)
       | Return e -> let (t, e') = expr symbols e in
         if t = rtype then SReturn (t, e') 
