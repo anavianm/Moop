@@ -46,14 +46,6 @@ let translate (classes) =
       StringMap.add name (class_type, cdecl) m in 
     List.fold_left create_class_types StringMap.empty classes in
 
-  let vtable_types : (L.lltype * scdecl) StringMap.t = 
-    (* Create vtable types *)
-    let create_vtable_types m cdecl = 
-      let name = cdecl.scname in 
-      let virtual_type = L.named_struct_type context (name ^ "_vtable") in 
-      StringMap.add name (virtual_type, cdecl) m in 
-    List.fold_left create_vtable_types StringMap.empty classes in
-
   (* Convert MicroC types to LLVM types *)
   let ltype_of_typ = function
       A.Int      -> i32_t
@@ -86,15 +78,6 @@ let translate (classes) =
     List.fold_left method_decl m cdecl.smethods in
     (* Fold over the list of classes *)
   List.fold_left get_class_method StringMap.empty classes in
- 
-  (* let create_vtable cdecl builder = match cdecl.spname with
-      None -> let mdecl = hd cdecl.smethods in
-              let arrptr_type = L.pointer_type L.void_type in
-              let array_type = L.array_type arrptr_type (length cdecl.smethods) in 
-              let array_ptr = L.build_malloc array_type "vtable" builder in
-              L.define_global (cdecl.scname ^ "_vtable") array_ptr the_module 
-    | Some _ -> L.define_global ("test") L.const_int i32_t 0
-  in *)
 
   (* Set types of instance variables for each class struct *)
   (* Set class bodies *)
@@ -125,38 +108,104 @@ let translate (classes) =
       in List.fold_left get_class_constructor StringMap.empty classes
   in 
 
-  let _ =
-    let set_vtable_body cdecl = match cdecl.sconstr with
-        None   -> ()
-      | Some _ ->
-      let (_, condecl) = StringMap.find cdecl.scname constr_decls in
-      let (vtable_type, _) = StringMap.find cdecl.scname vtable_types in
-      let formal_types = Array.of_list(List.map (fun (t,_) -> ltype_of_typ t) condecl.sconformals) in
-      let ctyp = L.function_type (ltype_of_typ (A.ClassT cdecl.scname)) formal_types in
-      let body_type = [| (L.pointer_type ctyp) |] in
-      L.struct_set_body vtable_type body_type false 
-    in List.map set_vtable_body classes 
-  in
+  let vtable_types : (L.lltype * scdecl) StringMap.t = 
+    (* Create vtable types *)
+    let create_vtable_types m cdecl = 
+      let name = cdecl.scname in 
+      let virtual_type = L.named_struct_type context (name ^ "_vtable") in 
+      StringMap.add name (virtual_type, cdecl) m in 
+    List.fold_left create_vtable_types StringMap.empty classes in
 
   let vtables = 
-    let create_vtables m cdecl = match cdecl.sconstr with
-      None -> m
-    | Some condecl -> 
+    let create_vtables m cdecl = 
+      let curr_class_methods =
+        let add_curr_method m mdecl =
+          let (mptr, meth_decl) = StringMap.find (cdecl.scname ^ mdecl.sfname) method_decls in
+          StringMap.add mdecl.sfname (mptr, meth_decl, cdecl.scname) m
+        in List.fold_left add_curr_method StringMap.empty cdecl.smethods
+      in
+      let final_class_methods = match cdecl.spname with
+        None -> curr_class_methods
+      | Some pname -> 
+        let parent = List.find (fun (c) -> (compare c.scname pname) == 0) classes in
+        let add_parent_method m mdecl =
+          if StringMap.mem mdecl.sfname m 
+            then m
+            else let (mptr, meth_decl) = StringMap.find (parent.scname ^ mdecl.sfname) method_decls in
+            StringMap.add mdecl.sfname (mptr, meth_decl, parent.scname) m
+        in List.fold_left add_parent_method curr_class_methods parent.smethods
+      in
+      
+      let method_ptr_types =
+        let get_method_ptr_type (_, (_, mdecl, cname)) =
+          let obj_formals = if (compare (cname ^ mdecl.sfname) "Mainmain") == 0 then mdecl.sformals
+          else (A.ClassT cdecl.scname, "objptr") :: mdecl.sformals in
+          let formal_types = Array.of_list(List.map (fun (t,_) -> ltype_of_typ t) obj_formals) in
+          let typ = L.function_type (ltype_of_typ mdecl.styp) formal_types in
+          L.pointer_type typ
+        in List.map get_method_ptr_type (StringMap.bindings final_class_methods)
+      in
+
+      let final_ptr_types = match cdecl.sconstr with
+        None   -> method_ptr_types
+      | Some _ ->
+          let (_, condecl) = StringMap.find cdecl.scname constr_decls in
+          let formal_types = Array.of_list(List.map (fun (t,_) -> ltype_of_typ t) condecl.sconformals) in
+          let ctyp = L.function_type (ltype_of_typ (A.ClassT cdecl.scname)) formal_types in
+          (L.pointer_type ctyp) :: method_ptr_types
+      in
+
+      let (vtable_type, _) = StringMap.find cdecl.scname vtable_types in
+      let body_type = Array.of_list final_ptr_types in
+      let _ = L.struct_set_body vtable_type body_type false in
+
+
       let (the_main, _ ) = StringMap.find "Mainmain" method_decls in
-      let (the_constructor, _) = StringMap.find cdecl.scname constr_decls in
       let builder = L.builder_at_end context (L.entry_block the_main) in
       let vtable_ptr = L.build_malloc (fst (StringMap.find cdecl.scname vtable_types)) (cdecl.scname ^ "_vtable") builder in
-      let elem_ptr = L.build_struct_gep vtable_ptr 0 "constr_ptr" builder in
-      let _ = L.build_store the_constructor elem_ptr builder in
-      (* let dummy_global =  L.define_global (cdecl.scname ^ "_vtable") (L.const_null (fst (StringMap.find cdecl.scname vtable_types))) the_module in *)
-      (* let _ = L.set_initializer (L.const_null (fst (StringMap.find cdecl.scname vtable_types))) dummy_global in
-      let deref = L.build_load vtable_ptr "vtable" builder in
-      let _ = L.build_store deref dummy_global builder in *)
+      let start_index =
+        match cdecl.sconstr with
+          None -> 0
+        | Some condecl -> 
+          let (the_constructor, _) = StringMap.find cdecl.scname constr_decls in
+          let elem_ptr = L.build_struct_gep vtable_ptr 0 "constr_ptr" builder in
+          let _ = L.build_store the_constructor elem_ptr builder in 1
+      in
+
+      let _ = 
+        let set_method_ptr accum (_, (the_method, _, _)) = 
+          let elem_ptr = L.build_struct_gep vtable_ptr accum "constr_ptr" builder in
+          let _ = L.build_store the_method elem_ptr builder in accum + 1
+        in List.fold_left set_method_ptr start_index (StringMap.bindings final_class_methods)
+      in
       StringMap.add cdecl.scname vtable_ptr m
     in List.fold_left create_vtables StringMap.empty classes
   in
 
+  let method_orderings = 
+    let add_class_all_methods m cdecl = 
+      
+      let curr_class_methods = 
+        let add_curr_method m mdecl =
+          StringMap.add mdecl.sfname (StringMap.find (cdecl.scname ^ mdecl.sfname) method_decls) m
+        in List.fold_left add_curr_method StringMap.empty cdecl.smethods
+      in
 
+      let final_class_methods = match cdecl.spname with
+        None -> curr_class_methods
+      | Some pname ->
+        let parent = List.find (fun (c) -> (compare c.scname pname) == 0) classes in
+        let add_parent_method m mdecl =
+          if StringMap.mem mdecl.sfname m 
+            then m
+            else StringMap.add mdecl.sfname (StringMap.find (parent.scname ^ mdecl.sfname) method_decls) m
+        in List.fold_left add_parent_method curr_class_methods parent.smethods
+
+
+      in StringMap.add (cdecl.scname) (StringMap.bindings final_class_methods) m
+
+    in List.fold_left add_class_all_methods StringMap.empty classes
+  in
   
 
   let build_class_constructor cdecl = match cdecl.sconstr with
@@ -164,14 +213,6 @@ let translate (classes) =
   | Some condecl -> 
     let (the_constructor, _) = StringMap.find cdecl.scname constr_decls in
     let builder = L.builder_at_end context (L.entry_block the_constructor) in
-
-    (* let vtable_ptr = L.build_malloc (fst (StringMap.find cdecl.scname vtable_types)) (cdecl.scname ^ "_vtable") builder in
-      let elem_ptr = L.build_struct_gep vtable_ptr 0 "constr_ptr" builder in
-      let _ = L.build_store the_constructor elem_ptr builder in
-      let dummy_global =  L.define_global (cdecl.scname ^ "_vtable") (L.const_null (fst (StringMap.find cdecl.scname vtable_types))) the_module in
-      (* let _ = L.set_initializer (L.const_null (fst (StringMap.find cdecl.scname vtable_types))) dummy_global in *)
-      let deref = L.build_load vtable_ptr "vtable" builder in
-      let _ = L.build_store deref dummy_global builder in *)
     
 
     let cstruct_ptr = L.build_malloc (L.element_type (ltype_of_typ (A.ClassT cdecl.scname))) cdecl.scname builder in 
@@ -191,24 +232,6 @@ let translate (classes) =
           let _ = List.fold_left set_default_value 0 cdecl.sfields in 
     
     
-    (* let _ =
-      let formal_types = Array.of_list(List.map (fun (t,_) -> ltype_of_typ t) condecl.sconformals) in
-      let ctyp = L.function_type (ltype_of_typ (A.ClassT cdecl.scname)) formal_types in
-
-      let arrptr_type = L.pointer_type i64_t in
-      let array_type = L.array_type arrptr_type ((List.length cdecl.smethods) + 1) in 
-      (* let array_ptr = L.build_malloc array_type "vtable" builder in *)
-      let array_ptr = L.build_array_malloc array_type (L.const_int i64_t ((List.length cdecl.smethods) + 1)) "vtable" builder in
-      let dummy_global =  L.define_global (cdecl.scname ^ "_vtable") (L.const_null (L.array_type arrptr_type ((List.length cdecl.smethods) + 1))) the_module in
-  
-      let elemptr = L.build_gep array_ptr [|L.const_int i64_t 0; L.const_int i64_t 0|] "vtable" builder in
-      let bitcast = L.build_pointercast the_constructor arrptr_type "constr_ptr" builder in
-      let _ = L.build_store bitcast elemptr builder in
-      let single_ptr = L.build_load array_ptr "sgl" builder in
-      L.build_store single_ptr dummy_global builder
-    in *)
-    
-
 
     let int_format_str    = L.build_global_stringptr "%d\n" "fmt" builder
       and float_format_str  = L.build_global_stringptr "%g\n" "fmt" builder
@@ -564,11 +587,6 @@ let translate (classes) =
           let field_ptr = L.build_struct_gep single_ptr field_index "field" builder in
             L.build_load field_ptr fname builder
         | SConcall (c, args) -> 
-          (* let (cdef, condecl) = StringMap.find c constr_decls in 
-          let llargs = List.rev (List.map (expr builder) (List.rev args)) in
-          let result = c ^ "_constr_result" in 
-            L.build_call cdef (Array.of_list llargs) result builder *)
-          
           let vtable_ptr = StringMap.find c vtables in
           let constr_ptr = L.build_struct_gep vtable_ptr 0 "constr_call_ptr" builder in
           let mptr = L.build_load constr_ptr "mptr" builder in
@@ -576,27 +594,8 @@ let translate (classes) =
           let result = c ^ "_constr_result" in 
           L.build_call mptr (Array.of_list llargs) result builder
 
-          
-          (* let (_, condecl) = StringMap.find c constr_decls in 
-          let formal_types = Array.of_list(List.map (fun (t,_) -> ltype_of_typ t) condecl.sconformals) in
-          let ctyp = L.function_type (ltype_of_typ (A.ClassT c)) formal_types in
-          let vtable = match L.lookup_global (c ^ "_vtable") the_module with
-                        None -> raise (Failure "bruh")
-                      | Some v -> v 
-          in
-          let elem_ptr = L.build_gep vtable [|L.const_int i64_t 0; L.const_int i64_t 0|] "elem_ptr" builder in
-          let con_ptr = L.build_load elem_ptr "con_ptr" builder in
-          let bitcast = L.build_pointercast con_ptr (L.pointer_type ctyp) "constr_ptr" builder in
-          let llargs = List.rev (List.map (expr builder) (List.rev args)) in
-          let result = c ^ "_constr_result" in 
-          L.build_call bitcast (Array.of_list llargs) result builder  *)
-
-
-
-
-
         | SMcall (oname, mname, args) -> 
-          let A.ClassT cname = fst (lookup oname) in
+          (* let A.ClassT cname = fst (lookup oname) in
           let (fdef, fdecl) = StringMap.find (cname ^ mname) method_decls in
           let (_, double_ptr) = lookup oname in
           let single_ptr = L.build_load double_ptr "tmp" builder in
@@ -605,7 +604,33 @@ let translate (classes) =
           let result = (match fdecl.styp with 
                           A.Void -> ""
                         | _ -> mname ^ "_result") in
+                L.build_call fdef (Array.of_list new_llargs) result builder *)
+
+
+          let A.ClassT cname = fst (lookup oname) in
+          let (_, cdecl) = StringMap.find cname class_types in
+          let class_method_orderings = StringMap.find cname method_orderings in 
+          let rec find x lst =
+            (match lst with
+            | []     -> raise (Failure "Not Found")
+            | (_, (mname, _)) :: t -> if x = mname then 0 else (1 + find x t)) 
+          in 
+          let method_index = (match cdecl.sconstr with
+            None -> find fname class_method_orderings
+          | Some _ -> (find fname class_method_orderings) + 1)
+          in
+          let vtable_ptr = StringMap.find cname vtables in
+          let method_index = L.build_struct_gep vtable_ptr method_index "method" builder in
+          let (_, double_ptr) = lookup oname in
+          let single_ptr = L.build_load double_ptr "tmp" builder in
+          let llargs = List.rev (List.map (expr builder) (List.rev args)) in
+          let new_llargs = single_ptr :: llargs in
+          let result = (match fdecl.styp with 
+                          A.Void -> ""
+                        | _ -> mname ^ "_result") in
                 L.build_call fdef (Array.of_list new_llargs) result builder
+
+
         | SThisId s -> 
           let (_, double_ptr) = lookup "objptr" in
           let single_ptr = L.build_load double_ptr "tmp" builder in
@@ -769,7 +794,7 @@ let _ =
   match L.block_terminator (L.insertion_block dummy_main_builder) with
     Some _ -> ()
     | None -> ignore (instr dummy_main_builder) 
-in
+in  
 
 
 L.print_module "tests/test.ll" the_module;
