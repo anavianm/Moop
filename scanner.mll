@@ -11,7 +11,7 @@ rule token = parse
   [' ' '\t' '\r' '\n'] { token lexbuf } (* Whitespace *)
 | "/*"     { mcomment lexbuf }           (* Multi Line Comments *)
 | "//"     { scomment lexbuf }           (* Single Line Comment *)
-| "(╯°□°）╯︵ ┻━┻" {fcomment lexbuf }
+| "🏎️" {fcomment lexbuf }
 | '('      { LPAREN  }
 | ')'      { RPAREN  }
 | '{'      { LBRACE  }
@@ -68,5 +68,5 @@ and scomment = parse
 | _    { scomment lexbuf }
 
 and fcomment = parse 
-"┬─┬ ノ( ゜-゜ノ)" { token lexbuf }
+"🏎️" { token lexbuf }
 | _               { fcomment lexbuf } 

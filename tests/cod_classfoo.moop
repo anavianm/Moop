@@ -13,16 +13,23 @@ class Foo {
         this.x = x;
     }
 
+    ~void testmethod() {
+        print("hi");
+    }
+
 }
 
 class Main { 
     int main () { 
         Foo test;
         test = new Foo(45);
+        //test.testmethod();
 
+        🏎️
         if (test.getX() == 45){
             print ("here");
         }
+        🏎️
 
         unless (test.getX() == 30) {
             test.setX(10);

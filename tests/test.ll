@@ -16,7 +16,10 @@ source_filename = "MicroOOP"
 @fmt.9 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @fmt.10 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
 @fmt.11 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@str = private unnamed_addr constant [5 x i8] c"here\00", align 1
+@str = private unnamed_addr constant [3 x i8] c"hi\00", align 1
+@fmt.12 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@fmt.13 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
+@fmt.14 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 
 declare i32 @printf(i8*, ...)
 
@@ -28,98 +31,93 @@ entry:
 
 define i32 @FoogetX(%Foo* %objptr) {
 entry:
-  %objptr1 = alloca %Foo*
-  store %Foo* %objptr, %Foo** %objptr1
-  %tmp = load %Foo*, %Foo** %objptr1
+  %objptr1 = alloca %Foo*, align 8
+  store %Foo* %objptr, %Foo** %objptr1, align 8
+  %tmp = load %Foo*, %Foo** %objptr1, align 8
   %field = getelementptr inbounds %Foo, %Foo* %tmp, i32 0, i32 0
-  %x = load i32, i32* %field
+  %x = load i32, i32* %field, align 4
   ret i32 %x
 }
 
 define void @FoosetX(%Foo* %objptr, i32 %x) {
 entry:
-  %objptr1 = alloca %Foo*
-  store %Foo* %objptr, %Foo** %objptr1
-  %x2 = alloca i32
-  store i32 %x, i32* %x2
-  %tmp = load %Foo*, %Foo** %objptr1
-  %x3 = load i32, i32* %x2
+  %objptr1 = alloca %Foo*, align 8
+  store %Foo* %objptr, %Foo** %objptr1, align 8
+  %x2 = alloca i32, align 4
+  store i32 %x, i32* %x2, align 4
+  %tmp = load %Foo*, %Foo** %objptr1, align 8
+  %x3 = load i32, i32* %x2, align 4
   %field = getelementptr inbounds %Foo, %Foo* %tmp, i32 0, i32 0
-  store i32 %x3, i32* %field
+  store i32 %x3, i32* %field, align 4
+  ret void
+}
+
+define void @Footestmethod(%Foo* %objptr) {
+entry:
+  %objptr1 = alloca %Foo*, align 8
+  store %Foo* %objptr, %Foo** %objptr1, align 8
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.11, i32 0, i32 0), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @str, i32 0, i32 0))
   ret void
 }
 
 define i32 @Mainmain() {
 entry:
-  %test = alloca %Foo*
+  %test = alloca %Foo*, align 8
   %Foo_constr_result = call %Foo* @Foo(i32 45)
-  store %Foo* %Foo_constr_result, %Foo** %test
-  %tmp = load %Foo*, %Foo** %test
+  store %Foo* %Foo_constr_result, %Foo** %test, align 8
+  %tmp = load %Foo*, %Foo** %test, align 8
   %getX_result = call i32 @FoogetX(%Foo* %tmp)
-  %tmp1 = icmp eq i32 %getX_result, 45
-  br i1 %tmp1, label %then, label %else
+  %tmp1 = icmp eq i32 %getX_result, 30
+  %tmp2 = xor i1 %tmp1, true
+  br i1 %tmp2, label %then, label %else
 
 merge:                                            ; preds = %else, %then
-  %tmp2 = load %Foo*, %Foo** %test
-  %getX_result3 = call i32 @FoogetX(%Foo* %tmp2)
-  %tmp4 = icmp eq i32 %getX_result3, 30
-  %tmp5 = xor i1 %tmp4, true
-  br i1 %tmp5, label %then7, label %else12
+  %tmp6 = load %Foo*, %Foo** %test, align 8
+  %getX_result7 = call i32 @FoogetX(%Foo* %tmp6)
+  %tmp8 = icmp eq i32 %getX_result7, 10
+  %tmp9 = xor i1 %tmp8, true
+  br i1 %tmp9, label %then11, label %else16
 
 then:                                             ; preds = %entry
-  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.11, i32 0, i32 0), i8* getelementptr inbounds ([5 x i8], [5 x i8]* @str, i32 0, i32 0))
+  %tmp3 = load %Foo*, %Foo** %test, align 8
+  call void @FoosetX(%Foo* %tmp3, i32 10)
+  %tmp4 = load %Foo*, %Foo** %test, align 8
+  %getX_result5 = call i32 @FoogetX(%Foo* %tmp4)
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.12, i32 0, i32 0), i32 %getX_result5)
   br label %merge
 
 else:                                             ; preds = %entry
   br label %merge
 
-merge6:                                           ; preds = %else12, %then7
-  %tmp13 = load %Foo*, %Foo** %test
-  %getX_result14 = call i32 @FoogetX(%Foo* %tmp13)
-  %tmp15 = icmp eq i32 %getX_result14, 10
-  %tmp16 = xor i1 %tmp15, true
-  br i1 %tmp16, label %then18, label %else23
-
-then7:                                            ; preds = %merge
-  %tmp8 = load %Foo*, %Foo** %test
-  call void @FoosetX(%Foo* %tmp8, i32 10)
-  %tmp9 = load %Foo*, %Foo** %test
-  %getX_result10 = call i32 @FoogetX(%Foo* %tmp9)
-  %printf11 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.9, i32 0, i32 0), i32 %getX_result10)
-  br label %merge6
-
-else12:                                           ; preds = %merge
-  br label %merge6
-
-merge17:                                          ; preds = %else23, %then18
-  %tmp24 = load %Foo*, %Foo** %test
-  %getX_result25 = call i32 @FoogetX(%Foo* %tmp24)
-  %printf26 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.9, i32 0, i32 0), i32 %getX_result25)
+merge10:                                          ; preds = %else16, %then11
+  %tmp17 = load %Foo*, %Foo** %test, align 8
+  %getX_result18 = call i32 @FoogetX(%Foo* %tmp17)
+  %printf19 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.12, i32 0, i32 0), i32 %getX_result18)
   ret i32 0
 
-then18:                                           ; preds = %merge6
-  %tmp19 = load %Foo*, %Foo** %test
-  call void @FoosetX(%Foo* %tmp19, i32 15)
-  %tmp20 = load %Foo*, %Foo** %test
-  %getX_result21 = call i32 @FoogetX(%Foo* %tmp20)
-  %printf22 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.9, i32 0, i32 0), i32 %getX_result21)
-  br label %merge17
+then11:                                           ; preds = %merge
+  %tmp12 = load %Foo*, %Foo** %test, align 8
+  call void @FoosetX(%Foo* %tmp12, i32 15)
+  %tmp13 = load %Foo*, %Foo** %test, align 8
+  %getX_result14 = call i32 @FoogetX(%Foo* %tmp13)
+  %printf15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.12, i32 0, i32 0), i32 %getX_result14)
+  br label %merge10
 
-else23:                                           ; preds = %merge6
-  br label %merge17
+else16:                                           ; preds = %merge
+  br label %merge10
 }
 
 define %Foo* @Foo(i32 %x) {
 entry:
-  %malloccall = tail call i8* @malloc(i32 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i32))
+  %malloccall = tail call i8* @malloc(i32 ptrtoint (%Foo* getelementptr (%Foo, %Foo* null, i32 1) to i32))
   %Foo = bitcast i8* %malloccall to %Foo*
   %field = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 0
-  store i32 0, i32* %field
-  %x1 = alloca i32
-  store i32 %x, i32* %x1
-  %x2 = load i32, i32* %x1
+  store i32 0, i32* %field, align 4
+  %x1 = alloca i32, align 4
+  store i32 %x, i32* %x1, align 4
+  %x2 = load i32, i32* %x1, align 4
   %field3 = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 0
-  store i32 %x2, i32* %field3
+  store i32 %x2, i32* %field3, align 4
   ret %Foo* %Foo
 }
 
