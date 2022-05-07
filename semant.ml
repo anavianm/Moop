@@ -71,7 +71,7 @@ let check (classes) =
     let add_class_fields map cd =
       let curr_fields =
         let add_field map ivd =
-          StringMap.add (cd.cname ^ ivd.iname) ivd.ityp map
+          StringMap.add (cd.cname ^ ivd.iname) (ivd.ityp, ivd.pub) map
         in List.fold_left add_field map cd.fields
       in
       (match cd.pname with
@@ -80,7 +80,7 @@ let check (classes) =
                       let add_parent_field map ivd =
                         if StringMap.for_all (fun name _ -> compare (cd.cname ^ ivd.iname) name != 0) curr_fields 
                         then 
-                        StringMap.add (cd.cname ^ ivd.iname) ivd.ityp map
+                        StringMap.add (cd.cname ^ ivd.iname) (ivd.ityp, ivd.pub) map
                        else raise (Failure "parent class and child class should not have duplicate fields")
                       in List.fold_left add_parent_field curr_fields pdecl.fields)
     in List.fold_left add_class_fields StringMap.empty classes in 
@@ -230,8 +230,8 @@ let check (classes) =
         let c = match typ with 
               ClassT c -> c
             | _ -> raise (Failure "Not a class type ") in 
-        let ftyp = StringMap.find (c ^ fname) all_fields in
-      (ftyp, SField(oname, fname))
+      let (ftyp, pub) = StringMap.find (c ^ fname) all_fields in
+      if pub then (ftyp, SField(oname, fname)) else raise (Failure "cannot access private fields")
     | Concall(cname, args) as ccall -> 
       let cd = find_constructor cname in 
         let param_length = List.length cd.formals in 
@@ -247,9 +247,9 @@ let check (classes) =
         let args' = List.map2 check_call cd.formals args
           in (ClassT cd.fname, SConcall(cname, args'))
 
-    | ThisId s -> (type_of_identifier fields_table s, SThisId s)
+    | ThisId s -> ((type_of_identifier fields_table s), SThisId s)
     | ThisAssign(var, e) as ex -> 
-      let lt = type_of_identifier fields_table var
+      let lt = (type_of_identifier fields_table var)
       and (rt, e') = expr symbols e in
       let err = "illegal assignment " ^ string_of_typ lt ^ " = " ^ 
         string_of_typ rt ^ " in " ^ string_of_expr ex
@@ -276,6 +276,7 @@ let check (classes) =
             ClassT c -> c
           | _ -> raise (Failure "Not a class type ") in 
       let md = find_method classname mname in 
+      let _ = if md.priv then raise (Failure "cannot access private method") in
       let param_length = List.length md.formals in
       if List.length args != param_length then
         raise (Failure ("expecting " ^ string_of_int param_length ^ 
