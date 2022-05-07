@@ -1,9 +1,9 @@
-(* Ocamllex scanner for JPlusPlus *)
+(* Ocamllex scanner for MOOP *)
 
 { open Parser }
 
 let digit = ['0' - '9']
-let special_chars = [',' '!' '?' '$' '@' '\'' ':' '#']
+let special_chars = [',' '!' '?' '$' '@' '\'' ':' '#' '<' '>' '-' '=' '_' '+' '|' '*' '&' '%' ';' '/' '{' '}' '[' ']' '^' '~' '`' '(' ')' '.']
 let digits = digit+
 
 
@@ -11,7 +11,7 @@ rule token = parse
   [' ' '\t' '\r' '\n'] { token lexbuf } (* Whitespace *)
 | "/*"     { mcomment lexbuf }           (* Multi Line Comments *)
 | "//"     { scomment lexbuf }           (* Single Line Comment *)
-| "🏎️" {fcomment lexbuf }
+| "🏎️"    { fcomment lexbuf }
 | '('      { LPAREN  }
 | ')'      { RPAREN  }
 | '{'      { LBRACE  }

@@ -115,7 +115,7 @@ stmt_list:
   stmt             { $1 :: [] }
   | stmt_list stmt   { $2 :: $1 }
 
-empty_statement: SEMI { Noexpr }
+empty_statement: SEMI { Nostmt }
 
 stmt:
     expr SEMI                                       { Expr $1                                 }
