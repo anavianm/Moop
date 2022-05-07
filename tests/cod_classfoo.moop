@@ -8,13 +8,17 @@ class Foo{
     int getX(){
         return this.x;
     }
+    
+    void printX(){
+        printi(this.x);
+    }
 }
 
 class Main { 
     int main () { 
         Foo test;
         test = new Foo(45);
-        printi(test.getX());
+        test.printX();
         return 0;
     }
 }       

@@ -613,14 +613,15 @@ let translate (classes) =
           let rec find x lst =
             (match lst with
             | []     -> raise (Failure "Not Found")
-            | (_, (mname, _)) :: t -> if x = mname then 0 else (1 + find x t)) 
+            | (mname, (_, _)) :: t -> if x = mname then 0 else (1 + find x t)) 
           in 
           let method_index = (match cdecl.sconstr with
-            None -> find fname class_method_orderings
-          | Some _ -> (find fname class_method_orderings) + 1)
+            None -> find mname class_method_orderings
+          | Some _ -> (find mname class_method_orderings) + 1)
           in
           let vtable_ptr = StringMap.find cname vtables in
           let method_index = L.build_struct_gep vtable_ptr method_index "method" builder in
+          let mptr = L.build_load method_index "mptr" builder in
           let (_, double_ptr) = lookup oname in
           let single_ptr = L.build_load double_ptr "tmp" builder in
           let llargs = List.rev (List.map (expr builder) (List.rev args)) in
@@ -628,7 +629,7 @@ let translate (classes) =
           let result = (match fdecl.styp with 
                           A.Void -> ""
                         | _ -> mname ^ "_result") in
-                L.build_call fdef (Array.of_list new_llargs) result builder
+                L.build_call mptr (Array.of_list new_llargs) result builder
 
 
         | SThisId s -> 
