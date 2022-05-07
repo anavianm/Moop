@@ -27,6 +27,11 @@ class Foo <- Bar {
         this.printY();
         printi(this.x);
     }
+
+    ~void testmethod() {
+        print("hi");
+    }
+
 }
 
 
@@ -36,6 +41,26 @@ class Main {
         test = new Foo(45);
         test.printX();
         print("!@#$%^&'()");
+        
+        //test.testmethod();
+
+        🏎️
+        if (test.getX() == 45){
+            print ("here");
+        }
+        🏎️    
+
+        unless (test.getX() == 30) {
+            test.setX(10);
+            printi(test.getX());
+        }
+
+        unless (test.getX() == 10) {
+            test.setX(15);
+            printi(test.getX());
+        }
+
+        printi(test.getX());
         return 0;
     }
 }       
