@@ -1,8 +1,22 @@
-class Foo{  
+class Bar {
+    int y;
+
+    Bar Bar () { 
+        ;
+    }
+}
+
+class Foo <- Bar {  
     int x;
 
     Foo Foo(int x) { 
         this.x = x;
+        this.y = 10;
+        this.printY();
+    }
+
+    void printY() {
+        printi(this.y);
     }
 
     int getX(){
@@ -10,15 +24,18 @@ class Foo{
     }
     
     void printX(){
+        this.printY();
         printi(this.x);
     }
 }
+
 
 class Main { 
     int main () { 
         Foo test;
         test = new Foo(45);
         test.printX();
+        print("!@#$%^&'()");
         return 0;
     }
 }       

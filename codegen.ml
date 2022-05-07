@@ -26,7 +26,7 @@ let translate (classes) =
   let context    = L.global_context () in
   (* Add types to the context so we can use them in our LLVM code *)
   let i32_t      = L.i32_type      context 
-  and i64_t      = L.i64_type      context
+  (* and i64_t      = L.i64_type      context *)
   and i8_t       = L.i8_type       context 
   and i1_t       = L.i1_type       context 
   and float_t    = L.double_type   context 
@@ -79,15 +79,6 @@ let translate (classes) =
     (* Fold over the list of classes *)
   List.fold_left get_class_method StringMap.empty classes in
 
-  (* Set types of instance variables for each class struct *)
-  (* Set class bodies *)
-  let _ = 
-    let set_class_body cdecl = 
-      let (class_type, _) = StringMap.find cdecl.scname class_types in
-      let body_type  = Array.of_list (List.map (fun x -> ltype_of_typ x.sityp) cdecl.sfields) in
-      L.struct_set_body class_type body_type false in
-  List.map set_class_body classes in
-
 
   (* ========== DUMMY MAIN ========== *)
   let dummy_main_t = L.function_type i32_t [||] in
@@ -115,6 +106,35 @@ let translate (classes) =
       let virtual_type = L.named_struct_type context (name ^ "_vtable") in 
       StringMap.add name (virtual_type, cdecl) m in 
     List.fold_left create_vtable_types StringMap.empty classes in
+
+  (* Set types of instance variables for each class struct *)
+  (* Set class bodies *)
+  let _ = 
+    let set_class_body cdecl = 
+
+      let (class_type, _) = StringMap.find cdecl.scname class_types in
+      let (vtable_type, _) = StringMap.find cdecl.scname vtable_types in
+      let child_body_type = (List.map (fun x -> ltype_of_typ x.sityp) cdecl.sfields) in
+      let final_body_type = (match cdecl.spname with
+                        None -> child_body_type
+                      | Some pname -> let (_, pdecl) = StringMap.find pname class_types in
+                                let parent_body_type = (List.map (fun x -> ltype_of_typ x.sityp) pdecl.sfields) in
+                                parent_body_type @ child_body_type) 
+      in
+      let vtable_and_body = Array.of_list ((L.pointer_type vtable_type) :: final_body_type) in
+      L.struct_set_body class_type vtable_and_body false in
+  List.map set_class_body classes in
+
+  let class_fields = 
+    let add_fields m cdecl =
+      let curr_fields = cdecl.sfields in
+      let final_fields = (match cdecl.spname with
+        None -> curr_fields
+      | Some pname -> let (_, pdecl) = StringMap.find pname class_types in
+        pdecl.sfields @ curr_fields)
+      in StringMap.add cdecl.scname final_fields m  
+    in List.fold_left add_fields StringMap.empty classes 
+  in
 
   let vtables = 
     let create_vtables m cdecl = 
@@ -162,11 +182,12 @@ let translate (classes) =
 
       let (the_main, _ ) = StringMap.find "Mainmain" method_decls in
       let builder = L.builder_at_end context (L.entry_block the_main) in
+      (* let builder = dummy_main_builder in *)
       let vtable_ptr = L.build_malloc (fst (StringMap.find cdecl.scname vtable_types)) (cdecl.scname ^ "_vtable") builder in
       let start_index =
         match cdecl.sconstr with
           None -> 0
-        | Some condecl -> 
+        | Some _ -> 
           let (the_constructor, _) = StringMap.find cdecl.scname constr_decls in
           let elem_ptr = L.build_struct_gep vtable_ptr 0 "constr_ptr" builder in
           let _ = L.build_store the_constructor elem_ptr builder in 1
@@ -178,9 +199,21 @@ let translate (classes) =
           let _ = L.build_store the_method elem_ptr builder in accum + 1
         in List.fold_left set_method_ptr start_index (StringMap.bindings final_class_methods)
       in
-      StringMap.add cdecl.scname vtable_ptr m
+
+      let init_list = List.map (fun ((_, (the_method, _, _))) -> the_method) (StringMap.bindings final_class_methods) in
+      let init_array = match cdecl.sconstr with
+        None -> Array.of_list init_list
+      | Some _ -> let (the_constructor, _) = StringMap.find cdecl.scname constr_decls in
+                         Array.of_list (the_constructor :: init_list)
+      in
+      let global_thing = L.define_global (cdecl.scname ^ "_vtable") (L.const_named_struct vtable_type init_array) the_module in
+      let sgl_ptr = L.build_load vtable_ptr "sgl" builder in
+      let _ = L.build_store sgl_ptr global_thing builder in
+
+      StringMap.add cdecl.scname global_thing m
     in List.fold_left create_vtables StringMap.empty classes
   in
+
 
   let method_orderings = 
     let add_class_all_methods m cdecl = 
@@ -213,23 +246,30 @@ let translate (classes) =
   | Some condecl -> 
     let (the_constructor, _) = StringMap.find cdecl.scname constr_decls in
     let builder = L.builder_at_end context (L.entry_block the_constructor) in
+    let fields = StringMap.find cdecl.scname class_fields in
     
 
     let cstruct_ptr = L.build_malloc (L.element_type (ltype_of_typ (A.ClassT cdecl.scname))) cdecl.scname builder in 
           (* let cstruct0 = L.build_struct_gep cstruct 0 "name?" builder in 
           let cstruct1 = L.build_struct_gep 1 "" builder *)
+          let vtable_index = L.build_struct_gep cstruct_ptr 0 "vtable" builder in 
+          let vtable_ptr = StringMap.find cdecl.scname vtables in
+          (* let vtable_ptr = L.build_gep vtable_ptr1 [|L.const_int i64_t 0|] "vtable_real" builder in *)
+          let _ = L.build_store vtable_ptr vtable_index builder in
           let get_default_value field = (match field.sityp with
                                           A.Int       -> L.const_int i32_t 0
                                         | A.Float     -> L.const_float_of_string float_t "0.0"
                                         | A.Str       -> L.build_global_stringptr (Scanf.unescaped "") "str" builder
                                         | A.Bool      -> L.const_int i1_t 0
+                                        | A.Void      -> L.const_null void_t
                                         | A.ClassT(_) -> L.const_null (ltype_of_typ field.sityp)) in 
           let set_default_value accum field = 
             let field_ptr = L.build_struct_gep cstruct_ptr accum "field" builder in 
             let default_value = get_default_value field in
             let _ = L.build_store default_value field_ptr builder in accum + 1
           in
-          let _ = List.fold_left set_default_value 0 cdecl.sfields in 
+          let _ = List.fold_left set_default_value 1 fields in
+          
     
     
 
@@ -334,18 +374,22 @@ let translate (classes) =
                               | _ -> f ^ "_result") in
                 L.build_call fdef (Array.of_list llargs) result builder
       | SField (oname, fname) ->
-        let (A.ClassT cname, double_ptr) = lookup oname in
-        let (_, cdecl) = StringMap.find cname class_types in
+        let (typ, double_ptr) = lookup oname in
+        let cname = match typ with 
+            A.ClassT cname -> cname
+          | _ -> raise (Failure "Not a class type ") in 
+        let fields = StringMap.find cname class_fields in
+        let (_, _) = StringMap.find cname class_types in
         let rec find x lst = (* https://stackoverflow.com/questions/31279920/finding-an-item-in-a-list-and-returning-its-index-ocaml*)
           match lst with
           | []     -> raise (Failure "Not Found")
-          | h :: t -> if x = h.siname then 0 else 1 + find x t in 
-        let field_index = find fname cdecl.sfields in
+          | h :: t -> if x = h.siname then 1 else 1 + find x t in 
+        let field_index = find fname fields in
         let single_ptr = L.build_load double_ptr "tmp" builder in
         let field_ptr = L.build_struct_gep single_ptr field_index "field" builder in
           L.build_load field_ptr fname builder
       | SConcall (c, args) -> 
-        let (cdef, condecl) = StringMap.find c constr_decls in 
+        let (cdef, _) = StringMap.find c constr_decls in 
           let llargs = List.rev (List.map (expr builder) (List.rev args)) in
           let result = c ^ "_constr_result" in 
             L.build_call cdef (Array.of_list llargs) result builder
@@ -353,20 +397,34 @@ let translate (classes) =
         let rec find x lst =
           match lst with
           | []     -> raise (Failure "Not Found")
-          | h :: t -> if x = h.siname then 0 else 1 + find x t in 
-        let field_index = find s cdecl.sfields in
+          | h :: t -> if x = h.siname then 1 else 1 + find x t in 
+        let fields = StringMap.find cdecl.scname class_fields in
+        let field_index = find s fields in
         let field_ptr = L.build_struct_gep cstruct_ptr field_index "field" builder in
           L.build_load field_ptr s builder
       | SThisAssign (s, e) -> let e' = expr builder e in
                           let rec find x lst =
                             match lst with
                             | []     -> raise (Failure "Not Found")
-                            | h :: t -> if x = h.siname then 0 else 1 + find x t in 
-                          let field_index = find s cdecl.sfields in
+                            | h :: t -> if x = h.siname then 1 else 1 + find x t in 
+                          let fields = StringMap.find cdecl.scname class_fields in
+                          let field_index = find s fields in
                           let field_ptr = L.build_struct_gep cstruct_ptr field_index "field" builder in
                           L.build_store e' field_ptr builder
+      | SThisMcall (mname, args) -> 
+        let cname = cdecl.scname in
+        let (fdef, fdecl) = StringMap.find (cname ^ mname) method_decls in
+        let llargs = List.rev (List.map (expr builder) (List.rev args)) in
+        let new_llargs = cstruct_ptr :: llargs in
+        let result = (match fdecl.styp with 
+                        A.Void -> ""
+                      | _ -> mname ^ "_result") in
+              L.build_call fdef (Array.of_list new_llargs) result builder
       | SMcall (oname, mname, args) -> 
-        let A.ClassT cname = fst (lookup oname) in
+        let typ = fst (lookup oname) in
+        let cname = match typ with 
+            A.ClassT cname -> cname
+          | _ -> raise (Failure "Not a class type ") in 
         let (fdef, fdecl) = StringMap.find (cname ^ mname) method_decls in
         let (_, double_ptr) = lookup oname in
         let single_ptr = L.build_load double_ptr "tmp" builder in
@@ -576,18 +634,23 @@ let translate (classes) =
                                 | _ -> f ^ "_result") in
                   L.build_call fdef (Array.of_list llargs) result builder
         | SField (oname, fname) ->
-          let (A.ClassT cname, double_ptr) = lookup oname in
-          let (_, cdecl) = StringMap.find cname class_types in
+          let (typ, double_ptr) = lookup oname in
+          let cname = match typ with 
+            A.ClassT cname -> cname
+          | _ -> raise (Failure "Not a class type ") in 
+          let fields = StringMap.find cname class_fields in
+          let (_, _) = StringMap.find cname class_types in
           let rec find x lst = (* https://stackoverflow.com/questions/31279920/finding-an-item-in-a-list-and-returning-its-index-ocaml*)
             match lst with
             | []     -> raise (Failure "Not Found")
-            | h :: t -> if x = h.siname then 0 else 1 + find x t in 
-          let field_index = find fname cdecl.sfields in
+            | h :: t -> if x = h.siname then 1 else 1 + find x t in 
+          let field_index = find fname fields in
           let single_ptr = L.build_load double_ptr "tmp" builder in
           let field_ptr = L.build_struct_gep single_ptr field_index "field" builder in
             L.build_load field_ptr fname builder
         | SConcall (c, args) -> 
           let vtable_ptr = StringMap.find c vtables in
+          (* let vtable_ptr = L.build_gep vtable_ptr1 [|L.const_int i64_t 0|] "vtable" builder in *)
           let constr_ptr = L.build_struct_gep vtable_ptr 0 "constr_call_ptr" builder in
           let mptr = L.build_load constr_ptr "mptr" builder in
           let llargs = List.rev (List.map (expr builder) (List.rev args)) in
@@ -595,51 +658,42 @@ let translate (classes) =
           L.build_call mptr (Array.of_list llargs) result builder
 
         | SMcall (oname, mname, args) -> 
-          (* let A.ClassT cname = fst (lookup oname) in
-          let (fdef, fdecl) = StringMap.find (cname ^ mname) method_decls in
-          let (_, double_ptr) = lookup oname in
-          let single_ptr = L.build_load double_ptr "tmp" builder in
-          let llargs = List.rev (List.map (expr builder) (List.rev args)) in
-          let new_llargs = single_ptr :: llargs in
-          let result = (match fdecl.styp with 
-                          A.Void -> ""
-                        | _ -> mname ^ "_result") in
-                L.build_call fdef (Array.of_list new_llargs) result builder *)
-
-
-          let A.ClassT cname = fst (lookup oname) in
+          let (typ, odouble_ptr) = lookup oname in
+          let cname = match typ with 
+            A.ClassT cname -> cname
+          | _ -> raise (Failure "Not a class type ") in 
           let (_, cdecl) = StringMap.find cname class_types in
-          let class_method_orderings = StringMap.find cname method_orderings in 
+          let class_method_orderings = StringMap.find cname method_orderings in
+          let osingle_ptr = L.build_load odouble_ptr "tmp" builder in
+          let vtable_ptr = L.build_struct_gep osingle_ptr 0 "vtable_ptr" builder in
+          let vtable = L.build_load vtable_ptr "vtable" builder in
           let rec find x lst =
             (match lst with
             | []     -> raise (Failure "Not Found")
-            | (mname, (_, _)) :: t -> if x = mname then 0 else (1 + find x t)) 
+            | (mname, (_, mdecl)) :: t -> if x = mname then (0, mdecl) 
+                                          else let (num, m) = find x t in (1 + num, m)) 
           in 
-          let method_index = (match cdecl.sconstr with
-            None -> find mname class_method_orderings
-          | Some _ -> (find mname class_method_orderings) + 1)
+          let (method_index, mdecl) = (match cdecl.sconstr with
+              None -> find mname class_method_orderings
+            | Some _ -> let (num, m) = (find mname class_method_orderings) in (num + 1, m))
           in
-          let vtable_ptr = StringMap.find cname vtables in
-          let method_index = L.build_struct_gep vtable_ptr method_index "method" builder in
-          let mptr = L.build_load method_index "mptr" builder in
-          let (_, double_ptr) = lookup oname in
-          let single_ptr = L.build_load double_ptr "tmp" builder in
+          let method_ptr = L.build_struct_gep vtable method_index "mptr" builder in
+          let final_method = L.build_load method_ptr "method" builder in
           let llargs = List.rev (List.map (expr builder) (List.rev args)) in
-          let new_llargs = single_ptr :: llargs in
-          let result = (match fdecl.styp with 
-                          A.Void -> ""
-                        | _ -> mname ^ "_result") in
-                L.build_call mptr (Array.of_list new_llargs) result builder
-
-
+          let new_llargs = osingle_ptr :: llargs in
+          let result = (match mdecl.styp with 
+                        A.Void -> ""
+                      | _ -> mname ^ "_result") in
+                L.build_call final_method (Array.of_list new_llargs) result builder
         | SThisId s -> 
           let (_, double_ptr) = lookup "objptr" in
           let single_ptr = L.build_load double_ptr "tmp" builder in
           let rec find x lst =
             match lst with
             | []     -> raise (Failure "Not Found")
-            | h :: t -> if x = h.siname then 0 else 1 + find x t in 
-          let field_index = find s cdecl.sfields in
+            | h :: t -> if x = h.siname then 1 else 1 + find x t in 
+          let fields = StringMap.find cdecl.scname class_fields in
+          let field_index = find s fields in
           let field_ptr = L.build_struct_gep single_ptr field_index "field" builder in
             L.build_load field_ptr s builder
         | SThisAssign (s, e) ->
@@ -649,16 +703,45 @@ let translate (classes) =
           let rec find x lst =
             match lst with
             | []     -> raise (Failure "Not Found")
-            | h :: t -> if x = h.siname then 0 else 1 + find x t in 
-          let field_index = find s cdecl.sfields in
+            | h :: t -> if x = h.siname then 1 else 1 + find x t in 
+          let fields = StringMap.find cdecl.scname class_fields in
+          let field_index = find s fields in
           let field_ptr = L.build_struct_gep single_ptr field_index "field" builder in
           L.build_store e' field_ptr builder
-        (* code code code beep beep boop beep code code beep beep boop beep *)
-            
-        (* TODO: add more expr cases anremove this after adding all cases   *)
+        | SThisMcall (mname, args) -> 
+          let (typ, odouble_ptr) = lookup "objptr" in
+          let cname = match typ with 
+            A.ClassT cname -> cname
+          | _ -> raise (Failure "Not a class type ") in 
+          let (_, cdecl) = StringMap.find cname class_types in
+          let class_method_orderings = StringMap.find cname method_orderings in
+          let osingle_ptr = L.build_load odouble_ptr "tmp" builder in
+          let vtable_ptr = L.build_struct_gep osingle_ptr 0 "vtable_ptr" builder in
+          let vtable = L.build_load vtable_ptr "vtable" builder in
+          let rec find x lst =
+            (match lst with
+            | []     -> raise (Failure "Not Found")
+            | (mname, (_, mdecl)) :: t -> if x = mname then (0, mdecl) 
+                                          else let (num, m) = find x t in (1 + num, m)) 
+          in 
+          let (method_index, mdecl) = (match cdecl.sconstr with
+              None -> find mname class_method_orderings
+            | Some _ -> let (num, m) = (find mname class_method_orderings) in (num + 1, m))
+          in
+          let method_ptr = L.build_struct_gep vtable method_index "mptr" builder in
+          let final_method = L.build_load method_ptr "method" builder in
+          let llargs = List.rev (List.map (expr builder) (List.rev args)) in
+          let new_llargs = osingle_ptr :: llargs in
+          let result = (match mdecl.styp with 
+                        A.Void -> ""
+                      | _ -> mname ^ "_result") in
+                L.build_call final_method (Array.of_list new_llargs) result builder
+          
         | _ -> L.const_int i32_t 0
         
       in
+      (* code code code beep beep boop beep code code beep beep boop beep *)
+
 
 
       (* =========== STATEMENTS =========== *)

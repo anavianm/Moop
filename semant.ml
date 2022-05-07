@@ -69,9 +69,20 @@ let check (classes) =
   
   let all_fields =
     let add_class_fields map cd =
-      let add_field map ivd =
-        StringMap.add (cd.cname ^ ivd.iname) ivd.ityp map
-      in List.fold_left add_field map cd.fields
+      let curr_fields =
+        let add_field map ivd =
+          StringMap.add (cd.cname ^ ivd.iname) ivd.ityp map
+        in List.fold_left add_field map cd.fields
+      in
+      (match cd.pname with
+        None -> curr_fields
+      | Some pname -> let pdecl = List.find (fun (p) -> compare pname p.cname == 0) classes in
+                      let add_parent_field map ivd =
+                        if StringMap.for_all (fun name _ -> compare (cd.cname ^ ivd.iname) name != 0) curr_fields 
+                        then 
+                        StringMap.add (cd.cname ^ ivd.iname) ivd.ityp map
+                       else raise (Failure "parent class and child class should not have duplicate fields")
+                      in List.fold_left add_parent_field curr_fields pdecl.fields)
     in List.fold_left add_class_fields StringMap.empty classes in 
   
   let check_class (currClass) = 
@@ -118,7 +129,11 @@ let check (classes) =
 
     (* Check Fields *)
 
-    let fields' = check_ivdecls currClass.fields in
+    let curr_fields' = check_ivdecls currClass.fields in
+    let fields' = (match currClass.pname with
+                    None -> curr_fields' 
+                  | Some pname -> let pdecl = List.find (fun (p) -> compare pname p.cname == 0) classes in
+                                  (check_ivdecls pdecl.fields) @ curr_fields') in
     let fields_table = List.fold_left (fun m ivdecl -> StringMap.add ivdecl.siname ivdecl.sityp m) StringMap.empty fields' in
 
     
@@ -209,9 +224,12 @@ let check (classes) =
         in 
         let args' = List.map2 check_call fd.formals args
         in (fd.typ, SCall(fname, args'))
-    | Field(oname, fname) as field ->
+    | Field(oname, fname) ->
       (* TODO: check if field is public *)
-      let ClassT c = type_of_identifier symbols oname in
+      let typ = type_of_identifier symbols oname in
+        let c = match typ with 
+              ClassT c -> c
+            | _ -> raise (Failure "Not a class type ") in 
         let ftyp = StringMap.find (c ^ fname) all_fields in
       (ftyp, SField(oname, fname))
     | Concall(cname, args) as ccall -> 
@@ -235,9 +253,28 @@ let check (classes) =
       and (rt, e') = expr symbols e in
       let err = "illegal assignment " ^ string_of_typ lt ^ " = " ^ 
         string_of_typ rt ^ " in " ^ string_of_expr ex
-      in (check_assign lt rt err, SThisAssign(var, (rt, e')))                
+      in (check_assign lt rt err, SThisAssign(var, (rt, e')))    
+    | ThisMcall (mname, args) as thismcall -> 
+      let classname = currClass.cname in
+      let md = find_method classname mname in 
+      let param_length = List.length md.formals in
+      if List.length args != param_length then
+        raise (Failure ("expecting " ^ string_of_int param_length ^ 
+                        " arguments in " ^ string_of_expr thismcall))
+      else let check_call (mt, _) e = 
+        let (et, e') = expr symbols e in 
+        let err = "illegal argument found " ^ string_of_typ et ^
+          " expected " ^ string_of_typ mt ^ " in " ^ string_of_expr e
+        in (check_assign mt et err, e')
+      in 
+      let args' = List.map2 check_call md.formals args
+      in (md.typ, SThisMcall(mname, args'))
+
     | Mcall(objectId, mname, args) as mcall -> 
-      let ClassT classname = type_of_identifier symbols objectId in
+      let typ = type_of_identifier symbols objectId in
+      let classname = match typ with 
+            ClassT c -> c
+          | _ -> raise (Failure "Not a class type ") in 
       let md = find_method classname mname in 
       let param_length = List.length md.formals in
       if List.length args != param_length then
