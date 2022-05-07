@@ -1,12 +1,12 @@
 class Node { 
-    ~ string data;
+    ~ int data;
     ~ Node next;
     
-    Node Node (string data) {
+    Node Node (int data) {
         this.data = data;
     }
 
-    void setNext (string data) {
+    void setNext (int data) {
         this.next = new Node(data);
         return;
     }
@@ -28,7 +28,7 @@ class LinkedList {
     }
     
     
-    void insertElem (string elem) {
+    void insertElem (int elem) {
         int i;
         Node curr;
         
@@ -59,7 +59,7 @@ class LinkedList {
 
         curr = this.first; 
         for (i = 0; i < this.size; i = i + 1) {
-            print (curr.data);
+            printi (curr.data);
             curr = curr.next;
         }
 
@@ -106,7 +106,7 @@ class LinkedList {
 
     }
 
-    string getElem (int index) {
+    int getElem (int index) {
         Node curr;
         int i;
         
@@ -119,37 +119,58 @@ class LinkedList {
     
 }
 
+class Queue { 
+    LinkedList queue;
+    
+    Queue Queue () {
+        this.queue = new LinkedList();
+    }
+    
+    void queue (int elem) {
+        LinkedList temp;
+        temp = this.queue;
+        temp.insertElem(elem);
+    }
+    
+    int dequeue () {
+        LinkedList temp;
+        int dequeuedElem;
+        temp = this.queue;
+
+        
+        if (temp.getSize() > 0) {
+            dequeuedElem = temp.getElem(0);
+            temp.deleteElem(0);
+            return dequeuedElem;
+        }
+        print("Queue is empty, no element to be dequeued");
+        return -1;
+    }
+
+    void printQueue() {
+        LinkedList temp;
+        temp = this.queue;
+        temp.printLinkedList();
+    }
+    
+}
+
 class Main {
     int main () {
-        LinkedList list;
-        list = new LinkedList();
-        list.insertElem("Leclerc    86 Best Best Driver");
-        list.insertElem("Verstappen 59 Bester Driver");
-        list.insertElem("Perez      54");
-        list.insertElem("Russell    49");
-        list.insertElem("Sainz      38");
-        list.insertElem("Norris     35");
-        list.insertElem("Hamilton   28");
-        list.insertElem("Bottas     24");
-        list.insertElem("Ocon       20");
-        list.insertElem("Magnussen  15");
-        list.insertElem("Ricciardo  11");
-        list.insertElem("Tsunoda    10");
-        list.insertElem("Gasly       6");
-        list.insertElem("Vettel      4");
-        list.insertElem("Alonso      2");
-        list.insertElem("Zhou        1");
-        list.insertElem("Stroll      1");
-        list.insertElem("Albon       1");
-        list.insertElem("Shumacher   0");
-        list.insertElem("Latifi      0");
+        Queue queue;
+        queue = new Queue();
+        queue.queue(1);
+        queue.queue(2);
+        queue.queue(3);
+        queue.queue(4);
+        queue.printQueue();
+        print ("DEQUEUE");
+        print("Dequeued element: ");
+        printi(queue.dequeue());
+        print("Dequeued element: ");
+        printi(queue.dequeue());
+        queue.printQueue();
 
-        print ("Current Championship Points Rankings");
-        list.printLinkedList();
-
-        print ("Remove Driver");
-        list.deleteElem(19);
-        list.printLinkedList(); 
         return 0;
     }
 }

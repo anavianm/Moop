@@ -29,7 +29,7 @@ class Main {
         if (test.getX() == 45){
             print ("here");
         }
-        🏎️
+        🏎️    
 
         unless (test.getX() == 30) {
             test.setX(10);
