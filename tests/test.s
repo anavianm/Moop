@@ -1,69 +1,94 @@
-	.text
-	.file	"MicroOOP"
-	.globl	main                    # -- Begin function main
+	.section	__TEXT,__text,regular,pure_instructions
+	.build_version macos, 11, 0
+	.globl	_Mainmain                       ## -- Begin function Mainmain
 	.p2align	4, 0x90
-	.type	main,@function
-main:                                   # @main
+_Mainmain:                              ## @Mainmain
 	.cfi_startproc
-# %bb.0:                                # %entry
+## %bb.0:                               ## %entry
 	pushq	%rax
 	.cfi_def_cfa_offset 16
-	callq	Mainmain
+	movl	$45, %edi
+	callq	*_Foo_vtable(%rip)
+	movq	%rax, (%rsp)
+	movl	(%rax), %esi
+	leaq	L_fmt.3(%rip), %rdi
+	xorl	%eax, %eax
+	callq	_printf
 	xorl	%eax, %eax
 	popq	%rcx
-	.cfi_def_cfa_offset 8
 	retq
-.Lfunc_end0:
-	.size	main, .Lfunc_end0-main
 	.cfi_endproc
-                                        # -- End function
-	.globl	Mainmain                # -- Begin function Mainmain
+                                        ## -- End function
+	.globl	_main                           ## -- Begin function main
 	.p2align	4, 0x90
-	.type	Mainmain,@function
-Mainmain:                               # @Mainmain
+_main:                                  ## @main
 	.cfi_startproc
-# %bb.0:                                # %entry
+## %bb.0:                               ## %entry
 	pushq	%rax
 	.cfi_def_cfa_offset 16
-	movl	$.Lfmt.2, %edi
-	movl	$.Lstr, %esi
-	xorl	%eax, %eax
-	callq	printf
+	callq	_Mainmain
 	xorl	%eax, %eax
 	popq	%rcx
-	.cfi_def_cfa_offset 8
 	retq
-.Lfunc_end1:
-	.size	Mainmain, .Lfunc_end1-Mainmain
 	.cfi_endproc
-                                        # -- End function
-	.type	main_ptr,@object        # @main_ptr
-	.data
-	.globl	main_ptr
+                                        ## -- End function
+	.globl	_Foo                            ## -- Begin function Foo
+	.p2align	4, 0x90
+_Foo:                                   ## @Foo
+	.cfi_startproc
+## %bb.0:                               ## %entry
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	pushq	%rbx
+	.cfi_def_cfa_offset 24
+	pushq	%rax
+	.cfi_def_cfa_offset 32
+	.cfi_offset %rbx, -24
+	.cfi_offset %rbp, -16
+	movl	%edi, %ebp
+	movl	$4, %edi
+	callq	_malloc
+	movq	%rax, %rbx
+	movl	$0, (%rax)
+	movl	$8, %edi
+	callq	_malloc
+	leaq	_Foo(%rip), %rcx
+	movq	%rcx, (%rax)
+	movq	%rcx, _Foo_vtable(%rip)
+	movl	%ebp, 4(%rsp)
+	movl	%ebp, (%rbx)
+	movq	%rbx, %rax
+	addq	$8, %rsp
+	popq	%rbx
+	popq	%rbp
+	retq
+	.cfi_endproc
+                                        ## -- End function
+	.section	__DATA,__data
+	.globl	_main_ptr                       ## @main_ptr
 	.p2align	3
-main_ptr:
-	.quad	main
-	.size	main_ptr, 8
+_main_ptr:
+	.quad	_main
 
-	.type	.Lfmt,@object           # @fmt
-	.section	.rodata.str1.1,"aMS",@progbits,1
-.Lfmt:
+	.globl	_Foo_vtable                     ## @Foo_vtable
+.zerofill __DATA,__common,_Foo_vtable,8,3
+	.section	__TEXT,__cstring,cstring_literals
+L_fmt:                                  ## @fmt
 	.asciz	"%d\n"
-	.size	.Lfmt, 4
 
-	.type	.Lfmt.1,@object         # @fmt.1
-.Lfmt.1:
+L_fmt.1:                                ## @fmt.1
 	.asciz	"%g\n"
-	.size	.Lfmt.1, 4
 
-	.type	.Lfmt.2,@object         # @fmt.2
-.Lfmt.2:
+L_fmt.2:                                ## @fmt.2
 	.asciz	"%s\n"
-	.size	.Lfmt.2, 4
 
-	.type	.Lstr,@object           # @str
-.Lstr:
-	.asciz	"Hello World, It's Mert and Richard"
-	.size	.Lstr, 35
+L_fmt.3:                                ## @fmt.3
+	.asciz	"%d\n"
 
-	.section	".note.GNU-stack","",@progbits
+L_fmt.4:                                ## @fmt.4
+	.asciz	"%g\n"
+
+L_fmt.5:                                ## @fmt.5
+	.asciz	"%s\n"
+
+.subsections_via_symbols
