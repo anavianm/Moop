@@ -45,4 +45,4 @@ cleann :
 
 zip:
 	zip -r moop.zip _tags Makefile ast.ml scanner.mll moop.ml README testall.py \
-	parser.mly codegen.ml sast.ml semant.ml moop.py tests/
+	parser.mly codegen.ml sast.ml semant.ml moop.py stdlib.moop tests/ demos/

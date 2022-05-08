@@ -80,16 +80,16 @@ Programs in testing suite
 /-----------------------------------------------------------------------------\
 |                                                                             |
 |  Positive Tests                                                             |
-|  1. pos_classfoo.moop         : Shows inheritance                           |
+|  1. pos_classfoo.moop         : Shows multiple tier inheritance             |
 |  2. pos_comments.moop         : Multiline and singleline commenting         |
 |  3. pos_defaultfields.moop    : Shows the default fields                    |
 |  4. pos_forloop.moop          : Testing for loops                           |
 |  5. pos_if.moop               : Testing if statement                        | 
 |  6. pos_locals                : Sets and prints local vars                  |
-|  7. pos_localstring.moop      : Creates a local string, prints     
-|  8. pos_objectFields.moop      : Creates a field in a class that is          |
-|                                 an object                                   | Tests a field th
-|  9. pos_printaddition.moop
+|  7. pos_localstring.moop      : Creates a local string, prints              |
+|  8. pos_objectFields.moop     : Creates a field in a class that is          |
+|                                 an object                                   | 
+|  9. pos_printaddition.moop    : Prints addition of two ints                 |
 |  10.pos_printint.moop         : Prints an int                               |         
 |                                                                             |
 |  Negative Tests:                                                            |

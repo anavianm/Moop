@@ -80,7 +80,7 @@ class Main {
         
         test = new Foo(45);
         test.printX();
-        test.prin
+        test.printAll();
         print("!@#$%^&'()");
 
         
