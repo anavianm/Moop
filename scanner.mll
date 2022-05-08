@@ -4,7 +4,7 @@
  *             Jacqueline Chin                                                
  *             Isabelle Lai                                                   
  *             Anthony Tranduc                                                
- * File:    SAST                                                                
+ * File:    scanner.mll                                                        
  * Purpose: Takes streams of ascii text and tokeinizes it                     *)
 
 

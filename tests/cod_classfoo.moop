@@ -9,16 +9,12 @@ class Moo {
         printi(this.z);
     }
 
-    void printHello(){
-        print("Hello!");
-    }
-
     void setZ(int z) {
         this.z = z;
     }
 
-     void printBye() {
-        print("Chicken");
+    void printClassName() {
+        print("Moo");
     }
 }
 
@@ -33,17 +29,23 @@ class Bar <- Moo{
         printi(this.y); 
     }
 
+    void setY(int y) {
+        this.y = y;
+    }
+
+    void printClassName() {
+        print("Bar");
+    }
+
 }
 
 class Foo <- Bar {  
     int x;
 
     Foo Foo(int x) { 
-        this.printBye();
         this.x = x;
-        this.y = 10;
-        this.z = 20;
-        this.printZ();
+        this.y = 20;
+        this.z = 30;
     }
 
     int getX(){
@@ -51,13 +53,17 @@ class Foo <- Bar {
     }
     
     void printX() {
-        this.printZ();
-        this.printY();
         printi(this.x);
     }
 
-    void printBye(){
-        print("Bye!");
+    void printAll() {
+        this.printX();
+        this.printY();
+        this.printZ();
+    }
+
+    void printClassName() {
+        print("Foo");
     }
 }
 
@@ -65,11 +71,9 @@ class Foo <- Bar {
 class Main { 
     int main () { 
         Foo test;
-        test = new Foo(45);
-        test.printX();
-        test.printZ();
-        test.setZ(30);
-        test.printZ();
+        test = new Foo(10);
+        test.printAll();
+        test.printClassName();
         return 0;
     }
 }       
