@@ -1,9 +1,42 @@
-class Bar {
+class Moo {
+    int z;
+
+    Moo Moo () {
+        ;
+    }
+
+    void printZ() {
+        printi(this.z);
+    }
+
+    void setZ(int z) {
+        this.z = z;
+    }
+
+    void printClassName() {
+        print("Moo");
+    }
+}
+
+class Bar <- Moo{
     int y;
 
     Bar Bar () { 
         ;
     }
+
+    void printY() {
+        printi(this.y); 
+    }
+
+    void setY(int y) {
+        this.y = y;
+    }
+
+    void printClassName() {
+        print("Bar");
+    }
+
 }
 
 class Foo <- Bar {  
@@ -11,37 +44,44 @@ class Foo <- Bar {
 
     Foo Foo(int x) { 
         this.x = x;
-        this.y = 10;
-        this.printY();
-    }
-
-    void printY() {
-        printi(this.y);
+        this.y = 20;
+        this.z = 30;
     }
 
     int getX(){
         return this.x;
     }
     
-    void printX(){
-        this.printY();
+    void printX() {
         printi(this.x);
     }
 
-    ~void testmethod() {
-        print("hi");
+    void printAll() {
+        this.printX();
+        this.printY();
+        this.printZ();
     }
 
+    void printClassName() {
+        print("Foo");
+        this.test();
+    }
+
+    ~void test() {
+        print("test");
+    }
 }
 
 
 class Main { 
     int main () { 
         Foo test;
-        test = new Foo(45);
-        test.printX();
-        print("!@#$%^&'()");
-        
+
+        test = new Foo(10);
+        test.printAll();
+        test.printClassName();
+        return 0;
+
     }
 }       
 

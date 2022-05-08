@@ -1,4 +1,13 @@
-/* Ocamlyacc parser for JPlusPlus */
+/* The MOOP Programming Language                                              
+ * Written by:                                                                
+ *             Maxwell Anavian                                                
+ *             Jacqueline Chin                                                
+ *             Isabelle Lai                                                   
+ *             Anthony Tranduc                                                
+ * File:    parser.mly                                                                
+ * Purpose: Semantically-checked Abstract Syntax Tree and functions for 
+            printing it                                                       */
+
 
 %{
 open Ast
