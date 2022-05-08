@@ -65,16 +65,19 @@ class Foo <- Bar {
     void printClassName() {
         print("Foo");
     }
+
 }
 
 
 class Main { 
     int main () { 
         Foo test;
+
         test = new Foo(10);
         test.printAll();
         test.printClassName();
         return 0;
+
     }
 }       
 
