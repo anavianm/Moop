@@ -1,0 +1,94 @@
+class Bar {
+    int y;
+
+    Bar Bar () { 
+        ;
+    }
+
+    void printY() {
+        printi(this.y); 
+    }
+
+    void setY(int y) {
+        this.y = y;
+    }
+
+    int getY() {
+        return this.y;
+    }
+
+    void printHello() {
+        print("Hello from Bar");
+    }
+
+    void printClassName() {
+        print("Bar");
+    }
+
+}
+
+class Foo <- Bar {  
+    int x;
+
+    Foo Foo(int x, int y) { 
+        this.x = x;
+        this.y = y;
+        this.printHello();
+        this.printClassName();
+    }
+
+    void setX(int x) {
+        this.x = x;
+    }
+
+    int getX(){
+        return this.x;
+    }
+    
+    void printX() {
+        printi(this.x);
+    }
+
+    void printAll() {
+        this.printX();
+        this.printY();
+    }
+
+    void setAll(int x, int y) {
+        this.setX(x);
+        this.setY(y);
+    }
+
+    void getAll() {
+        printi(this.getX());
+        printi(this.getY());
+    }
+
+    void printClassName() {
+        print("Foo");
+    }
+
+}
+
+
+class Main { 
+    int main () { 
+        Bar bar;
+        Foo foo;
+
+        bar = new Bar();
+        bar.setY(1);
+
+        foo = new Foo(2, 3);
+
+        bar.printY();
+        foo.printAll();
+        foo.setAll(4, 5);
+        foo.getAll();
+        foo.printClassName();
+    
+        return 0;
+
+    }
+}       
+

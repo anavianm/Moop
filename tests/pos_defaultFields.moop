@@ -1,0 +1,26 @@
+class Foo {
+    int i;
+    float f;
+    bool b;
+    string s;
+
+    Foo Foo () {
+        ;
+    }
+
+    void printAll () {
+        printi(this.i);
+        printf(this.f);
+        printb(this.b);
+        print(this.s);
+    }
+}
+
+class Main {
+    int main() {
+        Foo foo;
+        foo = new Foo();
+        foo.printAll();
+        return 0;
+    }
+}

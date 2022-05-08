@@ -1,12 +1,12 @@
 class Node { 
-    ~ string data;
+    ~ int data;
     ~ Node next;
     
-    Node Node (string data) {
+    Node Node (int data) {
         this.data = data;
     }
 
-    void setNext (string data) {
+    void setNext (int data) {
         this.next = new Node(data);
         return;
     }
@@ -28,7 +28,7 @@ class LinkedList {
     }
     
     
-    void insertElem (string elem) {
+    void insertElem (int elem) {
         int i;
         Node curr;
         
@@ -59,7 +59,7 @@ class LinkedList {
 
         curr = this.first; 
         for (i = 0; i < this.size; i = i + 1) {
-            print (curr.data);
+            printi (curr.data);
             curr = curr.next;
         }
 
@@ -106,7 +106,7 @@ class LinkedList {
 
     }
 
-    string getElem (int index) {
+    int getElem (int index) {
         Node curr;
         int i;
         
@@ -118,3 +118,285 @@ class LinkedList {
     }
     
 }
+
+class StringNode { 
+    ~ string data;
+    ~ StringNode next;
+    
+    StringNode StringNode (string data) {
+        this.data = data;
+    }
+
+    void setNext (string data) {
+        this.next = new StringNode(data);
+        return;
+    }
+
+    
+    void setNextNode (StringNode node) {
+        this.next = node;
+        return;
+    }
+    
+}
+
+class StringLinkedList { 
+    StringNode first;
+    int size;
+    
+    StringLinkedList StringLinkedList () { 
+        this.size = 0;
+    }
+    
+    
+    void insertElem (string elem) {
+        int i;
+        StringNode curr;
+        
+        if (this.size == 0) {
+            this.first = new StringNode(elem);
+        } else {
+            curr = this.first;
+            for (i = 0; i < this.size - 1; i = i + 1) {
+                curr = curr.next;
+            }
+            curr.setNext(elem);
+        }
+
+        this.size = this.size + 1;
+        
+        return;
+    }
+
+
+    int getSize () {
+        return this.size;
+    }
+    
+
+    void printStringLinkedList () {  
+        StringNode curr;
+        int i;
+
+        curr = this.first; 
+        for (i = 0; i < this.size; i = i + 1) {
+            print (curr.data);
+            curr = curr.next;
+        }
+
+        return;
+    }
+
+    
+    void deleteElem (int index) {
+        StringNode prev;
+        StringNode curr;
+        StringNode temp;
+        int i;
+
+
+        if (index == 0) {
+            temp = this.first;
+            this.first = temp.next;
+            this.size = this.size - 1;
+            return;
+        }
+        
+        
+        prev = this.first;
+        temp = this.first;
+        curr = temp.next;
+
+        
+        
+        for (i = 0; i < this.size; i = i + 1) { 
+            
+            if (i == index - 1) {
+                temp = curr.next;
+                prev.setNextNode(temp);
+                this.size = this.size - 1;
+                return;
+            } else {
+                prev = curr;
+                curr = curr.next;
+            }
+        }
+    
+        print("Element does not exist");
+        
+        return;
+
+    }
+
+    string getElem (int index) {
+        StringNode curr;
+        int i;
+        
+        curr = this.first;
+        for (i = 0; i < index; i = i + 1) {
+            curr = curr.next;
+        }
+        return curr.data;
+    }
+    
+}
+
+
+class Stack {
+    LinkedList stack;
+    
+    Stack Stack () {
+        this.stack = new LinkedList();
+    }
+    
+    void push (int elem) {
+        LinkedList temp; 
+        temp = this.stack;
+        temp.insertElem(elem);
+        return;
+    }
+    
+    int top () {
+        int poppedElem;
+        LinkedList temp;
+        temp = this.stack;
+        if (temp.getSize() > 0){
+            poppedElem = temp.getElem(temp.getSize() - 1);
+            return poppedElem;
+        }
+        print("Stack is empty, no element to be returned");
+        return -1;
+    }
+    
+    void pop () {
+        LinkedList temp;
+        temp = this.stack;
+        if (temp.getSize() > 0) {
+            temp.deleteElem(temp.getSize() - 1);
+        }
+        return;
+    }
+
+    void printStack () {
+        LinkedList temp;
+        temp = this.stack;
+        temp.printLinkedList();
+    }
+}
+
+class StringStack {
+    StringLinkedList stack;
+    
+    StringStack StringStack () {
+        this.stack = new StringLinkedList();
+    }
+    
+    void push (string elem) {
+        StringLinkedList temp; 
+        temp = this.stack;
+        temp.insertElem(elem);
+        return;
+    }
+    
+    string top () {
+        string poppedElem;
+        StringLinkedList temp;
+        temp = this.stack;
+        if (temp.getSize() > 0){
+            poppedElem = temp.getElem(temp.getSize() - 1);
+            return poppedElem;
+        }
+        print("Stack is empty, no element to be returned");
+        return "";
+    }
+    
+    void pop () {
+        StringLinkedList temp;
+        temp = this.stack;
+        if (temp.getSize() > 0) {
+            temp.deleteElem(temp.getSize() - 1);
+        }
+        return;
+    }
+
+    void printStack () {
+        StringLinkedList temp;
+        temp = this.stack;
+        temp.printStringLinkedList();
+    }
+}
+
+
+class Queue { 
+    LinkedList queue;
+    
+    Queue Queue () {
+        this.queue = new LinkedList();
+    }
+    
+    void queue (int elem) {
+        LinkedList temp;
+        temp = this.queue;
+        temp.insertElem(elem);
+    }
+    
+    int dequeue () {
+        LinkedList temp;
+        int dequeuedElem;
+        temp = this.queue;
+
+        
+        if (temp.getSize() > 0) {
+            dequeuedElem = temp.getElem(0);
+            temp.deleteElem(0);
+            return dequeuedElem;
+        }
+        print("Queue is empty, no element to be dequeued");
+        return -1;
+    }
+
+    void printQueue() {
+        LinkedList temp;
+        temp = this.queue;
+        temp.printLinkedList();
+    }
+    
+}
+
+
+class StringQueue { 
+    StringLinkedList queue;
+    
+    StringQueue StringQueue () {
+        this.queue = new StringLinkedList();
+    }
+    
+    void queue (string elem) {
+        StringLinkedList temp;
+        temp = this.queue;
+        temp.insertElem(elem);
+    }
+    
+    string dequeue () {
+        StringLinkedList temp;
+        string dequeuedElem;
+        temp = this.queue;
+
+        
+        if (temp.getSize() > 0) {
+            dequeuedElem = temp.getElem(0);
+            temp.deleteElem(0);
+            return dequeuedElem;
+        }
+        print("Queue is empty, no element to be dequeued");
+        return "";
+    }
+
+    void printQueue() {
+        StringLinkedList temp;
+        temp = this.queue;
+        temp.printStringLinkedList();
+    }
+    
+}
+

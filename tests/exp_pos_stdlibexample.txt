@@ -1,0 +1,39 @@
+Current Championship Points Rankings
+Leclerc    86 Best Best Driver
+Verstappen 59 Bester Driver
+Perez      54
+Russell    49
+Sainz      38
+Norris     35
+Hamilton   28
+Bottas     24
+Ocon       20
+Magnussen  15
+Ricciardo  11
+Tsunoda    10
+Gasly       6
+Vettel      4
+Alonso      2
+Zhou        1
+Stroll      1
+Albon       1
+Shumacher   0
+Latifi      0
+Remove Driver
+Leclerc    86 Best Best Driver
+Verstappen 59 Bester Driver
+Perez      54
+Sainz      38
+Hamilton   28
+Bottas     24
+Ocon       20
+Magnussen  15
+Ricciardo  11
+Tsunoda    10
+Gasly       6
+Vettel      4
+Alonso      2
+Zhou        1
+Stroll      1
+Albon       1
+Shumacher   0

@@ -1,0 +1,25 @@
+class Main {
+    int main() {
+        print("This should print");
+
+        //print("This should not print");
+
+        print("This should also print");
+
+        /*
+        print ("No");
+        print ("No No");
+        print ("No No No");
+        */
+
+        print("This should also also print");
+
+        🏎️
+        print ("Nope");
+        print ("Nope Nope");
+        print ("Nope Nope Nope");
+        🏎️
+
+        return 0;
+    }
+}

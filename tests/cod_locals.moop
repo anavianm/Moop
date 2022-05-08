@@ -1,9 +1,0 @@
-Class Main {
-    int main(){
-        string v1 = "Hello Mert";
-        int v2 = 12;
-
-        print ("Hello World, It's Mert and Richard");
-        return 0;
-    }
-}

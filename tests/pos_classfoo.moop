@@ -85,7 +85,7 @@ class Main {
         
         list = new LinkedList();
 
-        list.insertElem("hello");
+        list.insertElem(45);
         list.printLinkedList();
        
 

@@ -1,6 +1,7 @@
 class Main { 
     int main () {
-        printi (42);
+        printi (5);
+        chicken ();
         return 0;
     }
 }

@@ -1,0 +1,8 @@
+class Foo {
+    int x;
+    int y;
+
+    Foo Foo () {
+        ;
+    }
+}

@@ -20,8 +20,6 @@ module StringMap = Map.Make(String)
 
 
 let check (classes) =
-  (* TODO Built-in functions*)
-
   let built_in_decls = 
     let add_bind map (name, ty) = StringMap.add name {
       priv = false;
@@ -37,8 +35,6 @@ let check (classes) =
 
   (* Add function name to symbol table *)
 
-  (* TODO: Possibly combine the following for efficiency so we're not  *)
-  (*       Going over the methods twice  *)
   let all_methods = 
     let add_class_methods map cd =
       let curr_class_methods = 
@@ -151,8 +147,6 @@ let check (classes) =
         in checked_sivars
     in
 
-    (* TODO::IF weird bug check 'to_check' *)
-
     (* Check Fields *)
 
     let curr_fields' = check_ivdecls currClass.fields in
@@ -218,7 +212,7 @@ let check (classes) =
     | Binop(e1, op, e2) as e -> 
         let (t1, e1') = expr symbols e1 
         and (t2, e2') = expr symbols e2 in
-        (* All binafry operators require operands of the same type *)
+        (* All binary operators require operands of the same type *)
         let same = t1 = t2 in
         (* Determine expression type based on operator and operand types *)
         let ty = match op with
@@ -255,7 +249,6 @@ let check (classes) =
         let args' = List.map2 check_call fd.formals args
         in (fd.typ, SCall(fname, args'))
     | Field(oname, fname) ->
-      (* TODO: check if field is public *)
       let typ = type_of_identifier symbols oname in
         let c = match typ with 
               ClassT c -> c

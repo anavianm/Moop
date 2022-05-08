@@ -1,0 +1,12 @@
+class Main {
+    int main(){
+        string v1;
+        int v2;
+
+        v1 = "Hello Mert";
+        v2 = 12;
+
+        print (v1);
+        return 0;
+    }
+}

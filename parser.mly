@@ -46,20 +46,6 @@ decls:
    /* nothing */     { []       }
   | decls cdecl      { $2 :: $1 }
 
-// cdecl:
-//   CLASS ID extends LBRACE cbodydecls RBRACE
-//     { let (f, c, m) = $5 in { cname = $2;
-//     pname = $3;
-//     fields = List.rev f;
-//     constr = c;
-//     methods = List.rev m; } }
-
-//  cbodydecls:
-//    /* nothing */      { ([], None, [])           }
-//  | cbodydecls ivdecl  { let (f, c, m) = $1 in (($2 :: f), c, m) }
-//  | cbodydecls condecl { let (f, c, m) = $1 in (f, $2, m) }
-//  | cbodydecls mdecl   { let (f, c, m) = $1 in (f, c, ($2 :: m)) }
-
 cdecl:
   CLASS ID extends LBRACE cbodydecls RBRACE
     { { cname = $2;

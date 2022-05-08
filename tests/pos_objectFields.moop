@@ -1,0 +1,46 @@
+class Bar {
+    int x;
+
+    Bar Bar () {
+        this.x = 1;
+    }
+
+    void setX (int x) {
+        this.x = x;
+    }
+
+    int getX () {
+        return this.x;
+    }
+}
+
+class Foo {
+    Bar bar;
+
+    Foo Foo () {
+        this.bar = new Bar();
+    }
+
+    void setBar(int x) {
+        Bar temp;
+        temp = this.bar;
+        temp.setX(x);
+    }
+
+    int getBar() {
+        Bar temp;
+        temp = this.bar;
+        return temp.getX();
+    }
+}
+
+class Main {
+    int main() {
+        Foo foo;
+        foo = new Foo();
+        printi(foo.getBar());
+        foo.setBar(12);
+        printi(foo.getBar());
+        return 0;
+    }
+}

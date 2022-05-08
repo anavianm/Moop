@@ -53,7 +53,7 @@ let translate (classes) =
       StringMap.add name (class_type, cdecl) m in 
     List.fold_left create_class_types StringMap.empty classes in
 
-  (* Convert MicroC types to LLVM types *)
+  (* Convert Moop types to LLVM types *)
   let ltype_of_typ = function
       A.Int      -> i32_t
     | A.Bool     -> i1_t
@@ -68,7 +68,7 @@ let translate (classes) =
   let printf_func : L.llvalue =   
     L.declare_function "printf" printf_t the_module in
 
-    (* ========== METHOD DECLS ========== *)
+  (* ========== METHOD DECLS ========== *)
   (* Define stringmap for method declarations*)
   let method_decls : (L.llvalue * smdecl) StringMap.t =
     (* Get class of method *)
@@ -339,7 +339,7 @@ let translate (classes) =
 
 
     (* ============  EXPRS  ============ *)
-    (* Construct code for an expression; return its value *)
+    (* Construct code for an expressions in constructors; return its value *)
     let rec expr builder ((_, e) : sexpr) = match e with
       SLiteral i -> L.const_int i32_t i
       | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
@@ -447,14 +447,8 @@ let translate (classes) =
                           let field_ptr = L.build_struct_gep cstruct_ptr field_index "field" builder in
                           L.build_store e' field_ptr builder
       | SThisMcall (mname, args) -> 
-          (* let (typ, odouble_ptr) = lookup "objptr" in
-          let cname = match typ with 
-            A.ClassT cname -> cname
-          | _ -> raise (Failure "Not a class type ") in 
-          let (_, cdecl) = StringMap.find cname class_types in *)
           let cname = cdecl.scname in
           let class_method_orderings = StringMap.find cname method_orderings in
-          (* let osingle_ptr = L.build_load odouble_ptr "tmp" builder in *)
           let osingle_ptr = cstruct_ptr in
           let vtable_ptr = L.build_struct_gep osingle_ptr 0 "vtable_ptr" builder in
           let vtable = L.build_load vtable_ptr "vtable" builder in
@@ -638,7 +632,7 @@ let translate (classes) =
 
 
       (* ============  EXPRS  ============ *)
-      (* Construct code for an expression; return its value *)
+      (* Construct code for an expression in methods; return its value *)
       let rec expr builder ((_, e) : sexpr) = match e with
         SLiteral i -> L.const_int i32_t i
         | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
@@ -874,17 +868,17 @@ let translate (classes) =
         let then_builder = stmt (L.builder_at_end context then_bb) then_stmt in
           (* Add a branch to the "then" block (to the merge block) 
             if a terminator doesn't already exist for the "then" block *)
-      let () = add_terminal then_builder branch_instr in
+        let () = add_terminal then_builder branch_instr in
 
           (* Identical to stuff we did for "then" *)
-      let else_bb = L.append_block context "else" the_method in
+        let else_bb = L.append_block context "else" the_method in
           let else_builder = stmt (L.builder_at_end context else_bb) else_stmt in
-      let () = add_terminal else_builder branch_instr in
+        let () = add_terminal else_builder branch_instr in
 
           (* Generate initial branch instruction perform the selection of "then"
           or "else". Note we're using the builder we had access to at the start
           of this alternative. *)
-      let _ = L.build_cond_br bool_val then_bb else_bb builder in
+        let _ = L.build_cond_br bool_val then_bb else_bb builder in
           (* Move to the merge block for further instruction building *)
       L.builder_at_end context merge_bb
 

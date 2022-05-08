@@ -1,0 +1,36 @@
+class Main {
+    int main () {
+        StringLinkedList list;
+        list = new StringLinkedList();
+        list.insertElem("Leclerc    86 Best Best Driver");
+        list.insertElem("Verstappen 59 Bester Driver");
+        list.insertElem("Perez      54");
+        list.insertElem("Russell    49");
+        list.insertElem("Sainz      38");
+        list.insertElem("Norris     35");
+        list.insertElem("Hamilton   28");
+        list.insertElem("Bottas     24");
+        list.insertElem("Ocon       20");
+        list.insertElem("Magnussen  15");
+        list.insertElem("Ricciardo  11");
+        list.insertElem("Tsunoda    10");
+        list.insertElem("Gasly       6");
+        list.insertElem("Vettel      4");
+        list.insertElem("Alonso      2");
+        list.insertElem("Zhou        1");
+        list.insertElem("Stroll      1");
+        list.insertElem("Albon       1");
+        list.insertElem("Shumacher   0");
+        list.insertElem("Latifi      0");
+
+        print ("Current Championship Points Rankings");
+        list.printStringLinkedList();
+
+        print ("Remove Driver");
+        list.deleteElem(19);
+        list.deleteElem(3);
+        list.deleteElem(4);
+        list.printStringLinkedList(); 
+        return 0;
+    }
+}
