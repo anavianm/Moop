@@ -51,7 +51,7 @@ How to generate LLVM code
 |                                                                             |
 | How to Compile :                                                            |
 |                    make clean                                               |
-|                    make toplevel.native                                     |
+|                    make moop.native                                         |
 |                                                                             |
 | How to execute test script :                                                |
 |                    make test                                                |
@@ -67,7 +67,7 @@ How to generate LLVM code
 |             [-c] print the generated LLVM IR and check LLVM is valid        |
 |                                                                             |
 | How to generate intermediate files :                                        |
-|                    $ ./toplevel.native [flag] [filename]                    | 
+|                    $ ./moop.native [flag] [filename]                        | 
 |                                                                             |
 | How to generate executable :                                                |
 |                    $ python3 moop.py [filepath]                             |                        |                                                                             |
@@ -79,12 +79,30 @@ How to generate LLVM code
 Programs in testing suite 
 /-----------------------------------------------------------------------------\
 |                                                                             |
-|  1. cod_helloworld.moop     : Prints hello world                            |
-|  2. cod_locals.moop         : Hello world with locals declared in           |
-|                               main method                                   |
-|  3. cod_printint.moop       : Prints an int                                 |
-|  4. cod_additionprint.moop  : Prints two numbers added                      |
+|  Positive Tests                                                             |
+|  1. pos_classfoo.moop         : Shows inheritance                           |
+|  2. pos_comments.moop         : Multiline and singleline commenting         |
+|  3. pos_defaultfields.moop    : Shows the default fields                    |
+|  4. pos_forloop.moop          : Testing for loops                           |
+|  5. pos_if.moop               : Testing if statement                        | 
+|  6. pos_locals                : Sets and prints local vars                  |
+|  7. pos_localstring.moop      : Creates a local string, prints     
+|  8. pos_objectFields.moop      : Creates a field in a class that is          |
+|                                 an object                                   | Tests a field th
+|  9. pos_printaddition.moop
+|  10.pos_printint.moop         : Prints an int                               |         
 |                                                                             |
+|  Negative Tests:                                                            |
+|  1. neg_addfloattoint.moop        : Error is thrown when float              | 
+|                                     is added to int                         |
+|  2. neg_duplicatefield.moop       : Error is thrown when                    |
+|                                     a class has a two identical fields      |
+|  3. neg_nomainclass.moop          : Error is thrown when no Main            |
+|                                     class is present                        |
+|  4. neg_nomainmethod.moop         : Error is thrown when no main            |
+|                                     method is present                       |
+|  5. neg_undefinedfunction.moop    : Error is thrown when undefined          |
+|                                     method is called                        |
 |                                                                             |
 |  Our test script compares the output of the tests to an expected            |
 |  output file for each test to validate whether the compiled program         |
@@ -92,13 +110,9 @@ Programs in testing suite
 |                                                                             |
 \-----------------------------------------------------------------------------/
 
-
-Syntax to add in the future
-/-----------------------------------------------------------------------------\
-|                                                                             |
-|  1. allowing interchangeable order of variables and statements within       |
-|     methods                                                                 |
-|                                                                             |
-\-----------------------------------------------------------------------------/
-
-
+Where to Find Presentation Demos
+/------------------------------------------------------------------------------\
+|                                                                              |
+|     directory: /demos                                                        |
+|                                                                              |
+\------------------------------------------------------------------------------/
