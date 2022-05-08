@@ -1,4 +1,14 @@
-(* Semantically-checked Abstract Syntax Tree and functions for printing it *)
+(* The MOOP Programming Language                                              
+ * Written by:                                                                
+ *             Maxwell Anavian                                                
+ *             Jacqueline Chin                                                
+ *             Isabelle Lai                                                   
+ *             Anthony Tranduc                                                
+ * File:  SAST                                                                
+ * Purpose: Semantically-checked Abstract Syntax Tree and functions for 
+            printing it                                                       *)
+
+
 
 open Ast
 
