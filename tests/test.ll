@@ -5,14 +5,14 @@ source_filename = "MicroOOP"
 %Moo = type { %Moo_vtable*, i32 }
 %Bar_vtable = type { %Bar* ()*, void (%Bar*)*, void (%Bar*)*, void (%Moo*)*, void (%Bar*, i32)*, void (%Moo*, i32)* }
 %Bar = type { %Bar_vtable*, i32, i32, i32 }
-%Foo_vtable = type { %Foo* (i32)*, i32 (%Foo*)*, void (%Foo*)*, void (%Foo*)*, void (%Foo*)*, void (%Bar*)*, void (%Moo*)*, void (%Bar*, i32)*, void (%Moo*, i32)* }
+%Foo_vtable = type { %Foo* (i32)*, i32 (%Foo*)*, void (%Foo*)*, void (%Foo*)*, void (%Foo*)*, void (%Bar*)*, void (%Moo*)*, void (%Bar*, i32)*, void (%Moo*, i32)*, void (%Foo*)* }
 %Foo = type { %Foo_vtable*, i32, i32, i32, i32, i32, i32 }
 %Main_vtable = type { i32 ()* }
 
 @main_ptr = global i32 ()* @main
 @Moo_vtable = global %Moo_vtable { %Moo* ()* @Moo, void (%Moo*)* @MooprintClassName, void (%Moo*)* @MooprintZ, void (%Moo*, i32)* @MoosetZ }
 @Bar_vtable = global %Bar_vtable { %Bar* ()* @Bar, void (%Bar*)* @BarprintClassName, void (%Bar*)* @BarprintY, void (%Moo*)* @MooprintZ, void (%Bar*, i32)* @BarsetY, void (%Moo*, i32)* @MoosetZ }
-@Foo_vtable = global %Foo_vtable { %Foo* (i32)* @Foo, i32 (%Foo*)* @FoogetX, void (%Foo*)* @FooprintAll, void (%Foo*)* @FooprintClassName, void (%Foo*)* @FooprintX, void (%Bar*)* @BarprintY, void (%Moo*)* @MooprintZ, void (%Bar*, i32)* @BarsetY, void (%Moo*, i32)* @MoosetZ }
+@Foo_vtable = global %Foo_vtable { %Foo* (i32)* @Foo, i32 (%Foo*)* @FoogetX, void (%Foo*)* @FooprintAll, void (%Foo*)* @FooprintClassName, void (%Foo*)* @FooprintX, void (%Bar*)* @BarprintY, void (%Moo*)* @MooprintZ, void (%Bar*, i32)* @BarsetY, void (%Moo*, i32)* @MoosetZ, void (%Foo*)* @Footest }
 @Main_vtable = global %Main_vtable { i32 ()* @Mainmain }
 @fmt = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @fmt.1 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
@@ -59,6 +59,10 @@ source_filename = "MicroOOP"
 @fmt.41 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @fmt.42 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
 @fmt.43 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@str.44 = private unnamed_addr constant [5 x i8] c"test\00", align 1
+@fmt.45 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@fmt.46 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
+@fmt.47 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 
 declare i32 @printf(i8*, ...)
 
@@ -179,6 +183,20 @@ entry:
   %objptr1 = alloca %Foo*, align 8
   store %Foo* %objptr, %Foo** %objptr1, align 8
   %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.39, i32 0, i32 0), i8* getelementptr inbounds ([4 x i8], [4 x i8]* @str.40, i32 0, i32 0))
+  %tmp = load %Foo*, %Foo** %objptr1, align 8
+  %vtable_ptr = getelementptr inbounds %Foo, %Foo* %tmp, i32 0, i32 0
+  %vtable = load %Foo_vtable*, %Foo_vtable** %vtable_ptr, align 8
+  %mptr = getelementptr inbounds %Foo_vtable, %Foo_vtable* %vtable, i32 0, i32 9
+  %method = load void (%Foo*)*, void (%Foo*)** %mptr, align 8
+  call void %method(%Foo* %tmp)
+  ret void
+}
+
+define void @Footest(%Foo* %objptr) {
+entry:
+  %objptr1 = alloca %Foo*, align 8
+  store %Foo* %objptr, %Foo** %objptr1, align 8
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.43, i32 0, i32 0), i8* getelementptr inbounds ([5 x i8], [5 x i8]* @str.44, i32 0, i32 0))
   ret void
 }
 
@@ -232,14 +250,16 @@ entry:
   store void (%Bar*, i32)* @BarsetY, void (%Bar*, i32)** %constr_ptr20, align 8
   %constr_ptr21 = getelementptr inbounds %Foo_vtable, %Foo_vtable* %Foo_vtable, i32 0, i32 8
   store void (%Moo*, i32)* @MoosetZ, void (%Moo*, i32)** %constr_ptr21, align 8
-  %sgl22 = load %Foo_vtable, %Foo_vtable* %Foo_vtable, align 8
-  store %Foo_vtable %sgl22, %Foo_vtable* @Foo_vtable, align 8
-  %malloccall23 = tail call i8* @malloc(i32 ptrtoint (%Main_vtable* getelementptr (%Main_vtable, %Main_vtable* null, i32 1) to i32))
-  %Main_vtable = bitcast i8* %malloccall23 to %Main_vtable*
-  %constr_ptr24 = getelementptr inbounds %Main_vtable, %Main_vtable* %Main_vtable, i32 0, i32 0
-  store i32 ()* @Mainmain, i32 ()** %constr_ptr24, align 8
-  %sgl25 = load %Main_vtable, %Main_vtable* %Main_vtable, align 8
-  store %Main_vtable %sgl25, %Main_vtable* @Main_vtable, align 8
+  %constr_ptr22 = getelementptr inbounds %Foo_vtable, %Foo_vtable* %Foo_vtable, i32 0, i32 9
+  store void (%Foo*)* @Footest, void (%Foo*)** %constr_ptr22, align 8
+  %sgl23 = load %Foo_vtable, %Foo_vtable* %Foo_vtable, align 8
+  store %Foo_vtable %sgl23, %Foo_vtable* @Foo_vtable, align 8
+  %malloccall24 = tail call i8* @malloc(i32 ptrtoint (%Main_vtable* getelementptr (%Main_vtable, %Main_vtable* null, i32 1) to i32))
+  %Main_vtable = bitcast i8* %malloccall24 to %Main_vtable*
+  %constr_ptr25 = getelementptr inbounds %Main_vtable, %Main_vtable* %Main_vtable, i32 0, i32 0
+  store i32 ()* @Mainmain, i32 ()** %constr_ptr25, align 8
+  %sgl26 = load %Main_vtable, %Main_vtable* %Main_vtable, align 8
+  store %Main_vtable %sgl26, %Main_vtable* @Main_vtable, align 8
   %test = alloca %Foo*, align 8
   %mptr = load %Foo* (i32)*, %Foo* (i32)** getelementptr inbounds (%Foo_vtable, %Foo_vtable* @Foo_vtable, i32 0, i32 0), align 8
   %Foo_constr_result = call %Foo* %mptr(i32 10)
@@ -247,15 +267,15 @@ entry:
   %tmp = load %Foo*, %Foo** %test, align 8
   %vtable_ptr = getelementptr inbounds %Foo, %Foo* %tmp, i32 0, i32 0
   %vtable = load %Foo_vtable*, %Foo_vtable** %vtable_ptr, align 8
-  %mptr26 = getelementptr inbounds %Foo_vtable, %Foo_vtable* %vtable, i32 0, i32 2
-  %method = load void (%Foo*)*, void (%Foo*)** %mptr26, align 8
+  %mptr27 = getelementptr inbounds %Foo_vtable, %Foo_vtable* %vtable, i32 0, i32 2
+  %method = load void (%Foo*)*, void (%Foo*)** %mptr27, align 8
   call void %method(%Foo* %tmp)
-  %tmp27 = load %Foo*, %Foo** %test, align 8
-  %vtable_ptr28 = getelementptr inbounds %Foo, %Foo* %tmp27, i32 0, i32 0
-  %vtable29 = load %Foo_vtable*, %Foo_vtable** %vtable_ptr28, align 8
-  %mptr30 = getelementptr inbounds %Foo_vtable, %Foo_vtable* %vtable29, i32 0, i32 3
-  %method31 = load void (%Foo*)*, void (%Foo*)** %mptr30, align 8
-  call void %method31(%Foo* %tmp27)
+  %tmp28 = load %Foo*, %Foo** %test, align 8
+  %vtable_ptr29 = getelementptr inbounds %Foo, %Foo* %tmp28, i32 0, i32 0
+  %vtable30 = load %Foo_vtable*, %Foo_vtable** %vtable_ptr29, align 8
+  %mptr31 = getelementptr inbounds %Foo_vtable, %Foo_vtable* %vtable30, i32 0, i32 3
+  %method32 = load void (%Foo*)*, void (%Foo*)** %mptr31, align 8
+  call void %method32(%Foo* %tmp28)
   ret i32 0
 }
 
