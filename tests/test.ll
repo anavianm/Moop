@@ -5,11 +5,17 @@ source_filename = "MicroOOP"
 %Node = type { %Node_vtable*, %Node*, i8* }
 %LinkedList_vtable = type { %LinkedList* ()*, void (%LinkedList*, i32)*, i8* (%LinkedList*, i32)*, i32 (%LinkedList*)*, void (%LinkedList*, i8*)*, void (%LinkedList*)* }
 %LinkedList = type { %LinkedList_vtable*, i32, %Node* }
+%Bar_vtable = type { %Bar* ()* }
+%Bar = type { %Bar_vtable*, i32 }
+%Foo_vtable = type { %Foo* (i32)*, i32 (%Foo*)*, void (%Foo*)*, void (%Foo*)*, void (%Foo*)* }
+%Foo = type { %Foo_vtable*, i32, i32, i32 }
 %Main_vtable = type { i32 ()* }
 
 @main_ptr = global i32 ()* @main
 @Node_vtable = global %Node_vtable { %Node* (i8*)* @Node, void (%Node*, i8*)* @NodesetNext, void (%Node*, %Node*)* @NodesetNextNode }
 @LinkedList_vtable = global %LinkedList_vtable { %LinkedList* ()* @LinkedList, void (%LinkedList*, i32)* @LinkedListdeleteElem, i8* (%LinkedList*, i32)* @LinkedListgetElem, i32 (%LinkedList*)* @LinkedListgetSize, void (%LinkedList*, i8*)* @LinkedListinsertElem, void (%LinkedList*)* @LinkedListprintLinkedList }
+@Bar_vtable = global %Bar_vtable { %Bar* ()* @Bar }
+@Foo_vtable = global %Foo_vtable { %Foo* (i32)* @Foo, i32 (%Foo*)* @FoogetX, void (%Foo*)* @FooprintX, void (%Foo*)* @FooprintY, void (%Foo*)* @Footestmethod }
 @Main_vtable = global %Main_vtable { i32 ()* @Mainmain }
 @str = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
 @fmt = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
@@ -36,35 +42,34 @@ source_filename = "MicroOOP"
 @fmt.21 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @fmt.22 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
 @fmt.23 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@str.24 = private unnamed_addr constant [23 x i8] c"Element does not exist\00", align 1
-@fmt.25 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-@fmt.26 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
-@fmt.27 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@fmt.28 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-@fmt.29 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
-@fmt.30 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@str.31 = private unnamed_addr constant [31 x i8] c"Leclerc    86 Best Best Driver\00", align 1
-@str.32 = private unnamed_addr constant [28 x i8] c"Verstappen 59 Bester Driver\00", align 1
-@str.33 = private unnamed_addr constant [14 x i8] c"Perez      54\00", align 1
-@str.34 = private unnamed_addr constant [14 x i8] c"Russell    49\00", align 1
-@str.35 = private unnamed_addr constant [14 x i8] c"Sainz      38\00", align 1
-@str.36 = private unnamed_addr constant [14 x i8] c"Norris     35\00", align 1
-@str.37 = private unnamed_addr constant [14 x i8] c"Hamilton   28\00", align 1
-@str.38 = private unnamed_addr constant [14 x i8] c"Bottas     24\00", align 1
-@str.39 = private unnamed_addr constant [14 x i8] c"Ocon       20\00", align 1
-@str.40 = private unnamed_addr constant [14 x i8] c"Magnussen  15\00", align 1
-@str.41 = private unnamed_addr constant [14 x i8] c"Ricciardo  11\00", align 1
-@str.42 = private unnamed_addr constant [14 x i8] c"Tsunoda    10\00", align 1
-@str.43 = private unnamed_addr constant [14 x i8] c"Gasly       6\00", align 1
-@str.44 = private unnamed_addr constant [14 x i8] c"Vettel      4\00", align 1
-@str.45 = private unnamed_addr constant [14 x i8] c"Alonso      2\00", align 1
-@str.46 = private unnamed_addr constant [14 x i8] c"Zhou        1\00", align 1
-@str.47 = private unnamed_addr constant [14 x i8] c"Stroll      1\00", align 1
-@str.48 = private unnamed_addr constant [14 x i8] c"Albon       1\00", align 1
-@str.49 = private unnamed_addr constant [14 x i8] c"Shumacher   0\00", align 1
-@str.50 = private unnamed_addr constant [14 x i8] c"Latifi      0\00", align 1
-@str.51 = private unnamed_addr constant [37 x i8] c"Current Championship Points Rankings\00", align 1
-@str.52 = private unnamed_addr constant [14 x i8] c"Remove Driver\00", align 1
+@fmt.24 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@fmt.25 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
+@fmt.26 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@fmt.27 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@fmt.28 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
+@fmt.29 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@str.30 = private unnamed_addr constant [23 x i8] c"Element does not exist\00", align 1
+@fmt.31 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@fmt.32 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
+@fmt.33 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@fmt.34 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@fmt.35 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
+@fmt.36 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@fmt.37 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@fmt.38 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
+@fmt.39 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@fmt.40 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@fmt.41 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
+@fmt.42 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@fmt.43 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@fmt.44 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
+@fmt.45 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@str.46 = private unnamed_addr constant [3 x i8] c"hi\00", align 1
+@fmt.47 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@fmt.48 = private unnamed_addr constant [4 x i8] c"%g\0A\00", align 1
+@fmt.49 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@str.50 = private unnamed_addr constant [11 x i8] c"!@#$%^&'()\00", align 1
+@str.51 = private unnamed_addr constant [6 x i8] c"hello\00", align 1
 
 declare i32 @printf(i8*, ...)
 
@@ -202,7 +207,7 @@ while_body:                                       ; preds = %while
   %tmp2 = load %Node*, %Node** %curr
   %field3 = getelementptr inbounds %Node, %Node* %tmp2, i32 0, i32 2
   %data = load i8*, i8** %field3
-  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.20, i32 0, i32 0), i8* %data)
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.26, i32 0, i32 0), i8* %data)
   %tmp4 = load %Node*, %Node** %curr
   %field5 = getelementptr inbounds %Node, %Node* %tmp4, i32 0, i32 1
   %next = load %Node*, %Node** %field5
@@ -321,7 +326,7 @@ else40:                                           ; preds = %while_body
   br label %merge27
 
 merge52:                                          ; preds = %while
-  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.23, i32 0, i32 0), i8* getelementptr inbounds ([23 x i8], [23 x i8]* @str.24, i32 0, i32 0))
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.29, i32 0, i32 0), i8* getelementptr inbounds ([23 x i8], [23 x i8]* @str.30, i32 0, i32 0))
   ret void
 }
 
@@ -363,6 +368,52 @@ merge:                                            ; preds = %while
   ret i8* %data
 }
 
+define void @FooprintY(%Foo* %objptr) {
+entry:
+  %objptr1 = alloca %Foo*
+  store %Foo* %objptr, %Foo** %objptr1
+  %tmp = load %Foo*, %Foo** %objptr1
+  %field = getelementptr inbounds %Foo, %Foo* %tmp, i32 0, i32 1
+  %y = load i32, i32* %field
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.34, i32 0, i32 0), i32 %y)
+  ret void
+}
+
+define i32 @FoogetX(%Foo* %objptr) {
+entry:
+  %objptr1 = alloca %Foo*
+  store %Foo* %objptr, %Foo** %objptr1
+  %tmp = load %Foo*, %Foo** %objptr1
+  %field = getelementptr inbounds %Foo, %Foo* %tmp, i32 0, i32 3
+  %x = load i32, i32* %field
+  ret i32 %x
+}
+
+define void @FooprintX(%Foo* %objptr) {
+entry:
+  %objptr1 = alloca %Foo*
+  store %Foo* %objptr, %Foo** %objptr1
+  %tmp = load %Foo*, %Foo** %objptr1
+  %vtable_ptr = getelementptr inbounds %Foo, %Foo* %tmp, i32 0, i32 0
+  %vtable = load %Foo_vtable*, %Foo_vtable** %vtable_ptr
+  %mptr = getelementptr inbounds %Foo_vtable, %Foo_vtable* %vtable, i32 0, i32 3
+  %method = load void (%Foo*)*, void (%Foo*)** %mptr
+  call void %method(%Foo* %tmp)
+  %tmp2 = load %Foo*, %Foo** %objptr1
+  %field = getelementptr inbounds %Foo, %Foo* %tmp2, i32 0, i32 3
+  %x = load i32, i32* %field
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.40, i32 0, i32 0), i32 %x)
+  ret void
+}
+
+define void @Footestmethod(%Foo* %objptr) {
+entry:
+  %objptr1 = alloca %Foo*
+  store %Foo* %objptr, %Foo** %objptr1
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.45, i32 0, i32 0), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @str.46, i32 0, i32 0))
+  ret void
+}
+
 define i32 @Mainmain() {
 entry:
   %malloccall = tail call i8* @malloc(i32 trunc (i64 mul nuw (i64 ptrtoint (i1** getelementptr (i1*, i1** null, i32 1) to i64), i64 3) to i32))
@@ -392,155 +443,58 @@ entry:
   %sgl10 = load %LinkedList_vtable, %LinkedList_vtable* %LinkedList_vtable
   store %LinkedList_vtable %sgl10, %LinkedList_vtable* @LinkedList_vtable
   %malloccall11 = tail call i8* @malloc(i32 ptrtoint (i1** getelementptr (i1*, i1** null, i32 1) to i32))
-  %Main_vtable = bitcast i8* %malloccall11 to %Main_vtable*
-  %constr_ptr12 = getelementptr inbounds %Main_vtable, %Main_vtable* %Main_vtable, i32 0, i32 0
-  store i32 ()* @Mainmain, i32 ()** %constr_ptr12
-  %sgl13 = load %Main_vtable, %Main_vtable* %Main_vtable
-  store %Main_vtable %sgl13, %Main_vtable* @Main_vtable
+  %Bar_vtable = bitcast i8* %malloccall11 to %Bar_vtable*
+  %constr_ptr12 = getelementptr inbounds %Bar_vtable, %Bar_vtable* %Bar_vtable, i32 0, i32 0
+  store %Bar* ()* @Bar, %Bar* ()** %constr_ptr12
+  %sgl13 = load %Bar_vtable, %Bar_vtable* %Bar_vtable
+  store %Bar_vtable %sgl13, %Bar_vtable* @Bar_vtable
+  %malloccall14 = tail call i8* @malloc(i32 trunc (i64 mul nuw (i64 ptrtoint (i1** getelementptr (i1*, i1** null, i32 1) to i64), i64 5) to i32))
+  %Foo_vtable = bitcast i8* %malloccall14 to %Foo_vtable*
+  %constr_ptr15 = getelementptr inbounds %Foo_vtable, %Foo_vtable* %Foo_vtable, i32 0, i32 0
+  store %Foo* (i32)* @Foo, %Foo* (i32)** %constr_ptr15
+  %constr_ptr16 = getelementptr inbounds %Foo_vtable, %Foo_vtable* %Foo_vtable, i32 0, i32 1
+  store i32 (%Foo*)* @FoogetX, i32 (%Foo*)** %constr_ptr16
+  %constr_ptr17 = getelementptr inbounds %Foo_vtable, %Foo_vtable* %Foo_vtable, i32 0, i32 2
+  store void (%Foo*)* @FooprintX, void (%Foo*)** %constr_ptr17
+  %constr_ptr18 = getelementptr inbounds %Foo_vtable, %Foo_vtable* %Foo_vtable, i32 0, i32 3
+  store void (%Foo*)* @FooprintY, void (%Foo*)** %constr_ptr18
+  %constr_ptr19 = getelementptr inbounds %Foo_vtable, %Foo_vtable* %Foo_vtable, i32 0, i32 4
+  store void (%Foo*)* @Footestmethod, void (%Foo*)** %constr_ptr19
+  %sgl20 = load %Foo_vtable, %Foo_vtable* %Foo_vtable
+  store %Foo_vtable %sgl20, %Foo_vtable* @Foo_vtable
+  %malloccall21 = tail call i8* @malloc(i32 ptrtoint (i1** getelementptr (i1*, i1** null, i32 1) to i32))
+  %Main_vtable = bitcast i8* %malloccall21 to %Main_vtable*
+  %constr_ptr22 = getelementptr inbounds %Main_vtable, %Main_vtable* %Main_vtable, i32 0, i32 0
+  store i32 ()* @Mainmain, i32 ()** %constr_ptr22
+  %sgl23 = load %Main_vtable, %Main_vtable* %Main_vtable
+  store %Main_vtable %sgl23, %Main_vtable* @Main_vtable
+  %test = alloca %Foo*
   %list = alloca %LinkedList*
-  %mptr = load %LinkedList* ()*, %LinkedList* ()** getelementptr inbounds (%LinkedList_vtable, %LinkedList_vtable* @LinkedList_vtable, i32 0, i32 0)
-  %LinkedList_constr_result = call %LinkedList* %mptr()
+  %mptr = load %Foo* (i32)*, %Foo* (i32)** getelementptr inbounds (%Foo_vtable, %Foo_vtable* @Foo_vtable, i32 0, i32 0)
+  %Foo_constr_result = call %Foo* %mptr(i32 45)
+  store %Foo* %Foo_constr_result, %Foo** %test
+  %tmp = load %Foo*, %Foo** %test
+  %vtable_ptr = getelementptr inbounds %Foo, %Foo* %tmp, i32 0, i32 0
+  %vtable = load %Foo_vtable*, %Foo_vtable** %vtable_ptr
+  %mptr24 = getelementptr inbounds %Foo_vtable, %Foo_vtable* %vtable, i32 0, i32 2
+  %method = load void (%Foo*)*, void (%Foo*)** %mptr24
+  call void %method(%Foo* %tmp)
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.49, i32 0, i32 0), i8* getelementptr inbounds ([11 x i8], [11 x i8]* @str.50, i32 0, i32 0))
+  %mptr25 = load %LinkedList* ()*, %LinkedList* ()** getelementptr inbounds (%LinkedList_vtable, %LinkedList_vtable* @LinkedList_vtable, i32 0, i32 0)
+  %LinkedList_constr_result = call %LinkedList* %mptr25()
   store %LinkedList* %LinkedList_constr_result, %LinkedList** %list
-  %tmp = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr = getelementptr inbounds %LinkedList, %LinkedList* %tmp, i32 0, i32 0
-  %vtable = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr
-  %mptr14 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable, i32 0, i32 4
-  %method = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr14
-  call void %method(%LinkedList* %tmp, i8* getelementptr inbounds ([31 x i8], [31 x i8]* @str.31, i32 0, i32 0))
-  %tmp15 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr16 = getelementptr inbounds %LinkedList, %LinkedList* %tmp15, i32 0, i32 0
-  %vtable17 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr16
-  %mptr18 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable17, i32 0, i32 4
-  %method19 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr18
-  call void %method19(%LinkedList* %tmp15, i8* getelementptr inbounds ([28 x i8], [28 x i8]* @str.32, i32 0, i32 0))
-  %tmp20 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr21 = getelementptr inbounds %LinkedList, %LinkedList* %tmp20, i32 0, i32 0
-  %vtable22 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr21
-  %mptr23 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable22, i32 0, i32 4
-  %method24 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr23
-  call void %method24(%LinkedList* %tmp20, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.33, i32 0, i32 0))
-  %tmp25 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr26 = getelementptr inbounds %LinkedList, %LinkedList* %tmp25, i32 0, i32 0
-  %vtable27 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr26
-  %mptr28 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable27, i32 0, i32 4
-  %method29 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr28
-  call void %method29(%LinkedList* %tmp25, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.34, i32 0, i32 0))
-  %tmp30 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr31 = getelementptr inbounds %LinkedList, %LinkedList* %tmp30, i32 0, i32 0
-  %vtable32 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr31
-  %mptr33 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable32, i32 0, i32 4
-  %method34 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr33
-  call void %method34(%LinkedList* %tmp30, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.35, i32 0, i32 0))
-  %tmp35 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr36 = getelementptr inbounds %LinkedList, %LinkedList* %tmp35, i32 0, i32 0
-  %vtable37 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr36
-  %mptr38 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable37, i32 0, i32 4
-  %method39 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr38
-  call void %method39(%LinkedList* %tmp35, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.36, i32 0, i32 0))
-  %tmp40 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr41 = getelementptr inbounds %LinkedList, %LinkedList* %tmp40, i32 0, i32 0
-  %vtable42 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr41
-  %mptr43 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable42, i32 0, i32 4
-  %method44 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr43
-  call void %method44(%LinkedList* %tmp40, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.37, i32 0, i32 0))
-  %tmp45 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr46 = getelementptr inbounds %LinkedList, %LinkedList* %tmp45, i32 0, i32 0
-  %vtable47 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr46
-  %mptr48 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable47, i32 0, i32 4
-  %method49 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr48
-  call void %method49(%LinkedList* %tmp45, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.38, i32 0, i32 0))
-  %tmp50 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr51 = getelementptr inbounds %LinkedList, %LinkedList* %tmp50, i32 0, i32 0
-  %vtable52 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr51
-  %mptr53 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable52, i32 0, i32 4
-  %method54 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr53
-  call void %method54(%LinkedList* %tmp50, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.39, i32 0, i32 0))
-  %tmp55 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr56 = getelementptr inbounds %LinkedList, %LinkedList* %tmp55, i32 0, i32 0
-  %vtable57 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr56
-  %mptr58 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable57, i32 0, i32 4
-  %method59 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr58
-  call void %method59(%LinkedList* %tmp55, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.40, i32 0, i32 0))
-  %tmp60 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr61 = getelementptr inbounds %LinkedList, %LinkedList* %tmp60, i32 0, i32 0
-  %vtable62 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr61
-  %mptr63 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable62, i32 0, i32 4
-  %method64 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr63
-  call void %method64(%LinkedList* %tmp60, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.41, i32 0, i32 0))
-  %tmp65 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr66 = getelementptr inbounds %LinkedList, %LinkedList* %tmp65, i32 0, i32 0
-  %vtable67 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr66
-  %mptr68 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable67, i32 0, i32 4
-  %method69 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr68
-  call void %method69(%LinkedList* %tmp65, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.42, i32 0, i32 0))
-  %tmp70 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr71 = getelementptr inbounds %LinkedList, %LinkedList* %tmp70, i32 0, i32 0
-  %vtable72 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr71
-  %mptr73 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable72, i32 0, i32 4
-  %method74 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr73
-  call void %method74(%LinkedList* %tmp70, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.43, i32 0, i32 0))
-  %tmp75 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr76 = getelementptr inbounds %LinkedList, %LinkedList* %tmp75, i32 0, i32 0
-  %vtable77 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr76
-  %mptr78 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable77, i32 0, i32 4
-  %method79 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr78
-  call void %method79(%LinkedList* %tmp75, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.44, i32 0, i32 0))
-  %tmp80 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr81 = getelementptr inbounds %LinkedList, %LinkedList* %tmp80, i32 0, i32 0
-  %vtable82 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr81
-  %mptr83 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable82, i32 0, i32 4
-  %method84 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr83
-  call void %method84(%LinkedList* %tmp80, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.45, i32 0, i32 0))
-  %tmp85 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr86 = getelementptr inbounds %LinkedList, %LinkedList* %tmp85, i32 0, i32 0
-  %vtable87 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr86
-  %mptr88 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable87, i32 0, i32 4
-  %method89 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr88
-  call void %method89(%LinkedList* %tmp85, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.46, i32 0, i32 0))
-  %tmp90 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr91 = getelementptr inbounds %LinkedList, %LinkedList* %tmp90, i32 0, i32 0
-  %vtable92 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr91
-  %mptr93 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable92, i32 0, i32 4
-  %method94 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr93
-  call void %method94(%LinkedList* %tmp90, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.47, i32 0, i32 0))
-  %tmp95 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr96 = getelementptr inbounds %LinkedList, %LinkedList* %tmp95, i32 0, i32 0
-  %vtable97 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr96
-  %mptr98 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable97, i32 0, i32 4
-  %method99 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr98
-  call void %method99(%LinkedList* %tmp95, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.48, i32 0, i32 0))
-  %tmp100 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr101 = getelementptr inbounds %LinkedList, %LinkedList* %tmp100, i32 0, i32 0
-  %vtable102 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr101
-  %mptr103 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable102, i32 0, i32 4
-  %method104 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr103
-  call void %method104(%LinkedList* %tmp100, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.49, i32 0, i32 0))
-  %tmp105 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr106 = getelementptr inbounds %LinkedList, %LinkedList* %tmp105, i32 0, i32 0
-  %vtable107 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr106
-  %mptr108 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable107, i32 0, i32 4
-  %method109 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr108
-  call void %method109(%LinkedList* %tmp105, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.50, i32 0, i32 0))
-  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.30, i32 0, i32 0), i8* getelementptr inbounds ([37 x i8], [37 x i8]* @str.51, i32 0, i32 0))
-  %tmp110 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr111 = getelementptr inbounds %LinkedList, %LinkedList* %tmp110, i32 0, i32 0
-  %vtable112 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr111
-  %mptr113 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable112, i32 0, i32 5
-  %method114 = load void (%LinkedList*)*, void (%LinkedList*)** %mptr113
-  call void %method114(%LinkedList* %tmp110)
-  %printf115 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @fmt.30, i32 0, i32 0), i8* getelementptr inbounds ([14 x i8], [14 x i8]* @str.52, i32 0, i32 0))
-  %tmp116 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr117 = getelementptr inbounds %LinkedList, %LinkedList* %tmp116, i32 0, i32 0
-  %vtable118 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr117
-  %mptr119 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable118, i32 0, i32 1
-  %method120 = load void (%LinkedList*, i32)*, void (%LinkedList*, i32)** %mptr119
-  call void %method120(%LinkedList* %tmp116, i32 19)
-  %tmp121 = load %LinkedList*, %LinkedList** %list
-  %vtable_ptr122 = getelementptr inbounds %LinkedList, %LinkedList* %tmp121, i32 0, i32 0
-  %vtable123 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr122
-  %mptr124 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable123, i32 0, i32 5
-  %method125 = load void (%LinkedList*)*, void (%LinkedList*)** %mptr124
-  call void %method125(%LinkedList* %tmp121)
+  %tmp26 = load %LinkedList*, %LinkedList** %list
+  %vtable_ptr27 = getelementptr inbounds %LinkedList, %LinkedList* %tmp26, i32 0, i32 0
+  %vtable28 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr27
+  %mptr29 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable28, i32 0, i32 4
+  %method30 = load void (%LinkedList*, i8*)*, void (%LinkedList*, i8*)** %mptr29
+  call void %method30(%LinkedList* %tmp26, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @str.51, i32 0, i32 0))
+  %tmp31 = load %LinkedList*, %LinkedList** %list
+  %vtable_ptr32 = getelementptr inbounds %LinkedList, %LinkedList* %tmp31, i32 0, i32 0
+  %vtable33 = load %LinkedList_vtable*, %LinkedList_vtable** %vtable_ptr32
+  %mptr34 = getelementptr inbounds %LinkedList_vtable, %LinkedList_vtable* %vtable33, i32 0, i32 5
+  %method35 = load void (%LinkedList*)*, void (%LinkedList*)** %mptr34
+  call void %method35(%LinkedList* %tmp31)
   ret i32 0
 }
 
@@ -581,6 +535,40 @@ entry:
   %field2 = getelementptr inbounds %LinkedList, %LinkedList* %LinkedList, i32 0, i32 1
   store i32 0, i32* %field2
   ret %LinkedList* %LinkedList
+}
+
+define %Bar* @Bar() {
+entry:
+  %malloccall = tail call i8* @malloc(i32 ptrtoint (%Bar* getelementptr (%Bar, %Bar* null, i32 1) to i32))
+  %Bar = bitcast i8* %malloccall to %Bar*
+  %vtable = getelementptr inbounds %Bar, %Bar* %Bar, i32 0, i32 0
+  store %Bar_vtable* @Bar_vtable, %Bar_vtable** %vtable
+  %field = getelementptr inbounds %Bar, %Bar* %Bar, i32 0, i32 1
+  store i32 0, i32* %field
+  ret %Bar* %Bar
+}
+
+define %Foo* @Foo(i32 %x) {
+entry:
+  %malloccall = tail call i8* @malloc(i32 ptrtoint (%Foo* getelementptr (%Foo, %Foo* null, i32 1) to i32))
+  %Foo = bitcast i8* %malloccall to %Foo*
+  %vtable = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 0
+  store %Foo_vtable* @Foo_vtable, %Foo_vtable** %vtable
+  %field = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 1
+  store i32 0, i32* %field
+  %field1 = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 2
+  store i32 0, i32* %field1
+  %field2 = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 3
+  store i32 0, i32* %field2
+  %x3 = alloca i32
+  store i32 %x, i32* %x3
+  %x4 = load i32, i32* %x3
+  %field5 = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 3
+  store i32 %x4, i32* %field5
+  %field6 = getelementptr inbounds %Foo, %Foo* %Foo, i32 0, i32 1
+  store i32 10, i32* %field6
+  call void @FooprintY(%Foo* %Foo)
+  ret %Foo* %Foo
 }
 
 declare noalias i8* @malloc(i32)

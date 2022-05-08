@@ -38,9 +38,17 @@ class Foo <- Bar {
 class Main { 
     int main () { 
         Foo test;
+        LinkedList list;
+        
         test = new Foo(45);
         test.printX();
         print("!@#$%^&'()");
+
+        
+        list = new LinkedList();
+
+        list.insertElem("hello");
+        list.printLinkedList();
         
     }
 }       
