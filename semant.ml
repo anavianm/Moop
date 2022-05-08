@@ -1,4 +1,12 @@
-(* Semantic checking for the MicroC compiler *)
+(* The MOOP Programming Language                                              
+ * Written by:                                                                
+ *             Maxwell Anavian                                                
+ *             Jacqueline Chin                                                
+ *             Isabelle Lai                                                   
+ *             Anthony Tranduc                                                
+ * File:    semant.ml                                                                
+ * Purpose: Semantic checking for the MOOP compiler *)
+
 
 open Ast
 open Sast
@@ -32,18 +40,33 @@ let check (classes) =
   (* TODO: Possibly combine the following for efficiency so we're not  *)
   (*       Going over the methods twice  *)
   let all_methods = 
-    let add_class_methods map cd = 
-      let add_method map md = 
-        let built_in_err = "function " ^ md.fname ^ " may not be defined"
-        and dup_err = "duplicate method " ^ md.fname
-        and make_err er = raise (Failure er)
-        and n = cd.cname ^ md.fname (* Name of the class ^ function *) (*TODO Possible bug?*)
-        in match md with (* No duplicate functions or redefinitions of built-ins *)
-            _ when StringMap.mem n built_in_decls -> make_err built_in_err
-          | _ when StringMap.mem n map -> make_err dup_err  
-          | _ when (compare cd.cname md.fname) == 0 -> map
-          | _ ->  StringMap.add n md map
-      in List.fold_left add_method map cd.methods 
+    let add_class_methods map cd =
+      let curr_class_methods = 
+        let add_method map md = 
+          let built_in_err = "function " ^ md.fname ^ " may not be defined"
+          and dup_err = "duplicate method " ^ md.fname
+          and make_err er = raise (Failure er)
+          and n = cd.cname ^ md.fname
+          in match md with (* No duplicate functions or redefinitions of built-ins *)
+              _ when StringMap.mem n built_in_decls -> make_err built_in_err
+            | _ when StringMap.mem n map -> make_err dup_err  
+            | _ when (compare cd.cname md.fname) == 0 -> map
+            | _ ->  StringMap.add n md map
+        in List.fold_left add_method map cd.methods
+      in
+
+      let rec add_parent_methods parentname =
+        (match parentname with
+          None -> []
+        | Some pname -> let pdecl = List.find (fun (p) -> compare pname p.cname == 0) classes in
+                        (add_parent_methods pdecl.pname) @ pdecl.methods)
+      in 
+      
+      let ancestor_methods = add_parent_methods cd.pname in
+      let add_parent_method m md =
+        if StringMap.mem (cd.cname ^ md.fname) m then m
+        else StringMap.add (cd.cname ^ md.fname) md m
+        in List.fold_left add_parent_method curr_class_methods ancestor_methods
     in List.fold_left add_class_methods built_in_decls classes in
   
   (* Check for main class and method. *)
@@ -74,15 +97,20 @@ let check (classes) =
           StringMap.add (cd.cname ^ ivd.iname) ivd.ityp map
         in List.fold_left add_field map cd.fields
       in
-      (match cd.pname with
-        None -> curr_fields
+      let rec add_parent_fields parentname = match parentname with 
+        None -> []
       | Some pname -> let pdecl = List.find (fun (p) -> compare pname p.cname == 0) classes in
-                      let add_parent_field map ivd =
-                        if StringMap.for_all (fun name _ -> compare (cd.cname ^ ivd.iname) name != 0) curr_fields 
-                        then 
-                        StringMap.add (cd.cname ^ ivd.iname) ivd.ityp map
-                       else raise (Failure "parent class and child class should not have duplicate fields")
-                      in List.fold_left add_parent_field curr_fields pdecl.fields)
+                      (add_parent_fields pdecl.pname) @ pdecl.fields 
+      in
+
+      let ancester_fields = add_parent_fields cd.pname in
+      let add_parent_field map ivd =
+        if StringMap.for_all (fun name _ -> compare (cd.cname ^ ivd.iname) name != 0) curr_fields 
+        then 
+        StringMap.add (cd.cname ^ ivd.iname) ivd.ityp map
+       else raise (Failure "parent class and child class should not have duplicate fields")
+      in List.fold_left add_parent_field curr_fields ancester_fields
+                      
     in List.fold_left add_class_fields StringMap.empty classes in 
   
   let check_class (currClass) = 
@@ -130,10 +158,14 @@ let check (classes) =
     (* Check Fields *)
 
     let curr_fields' = check_ivdecls currClass.fields in
-    let fields' = (match currClass.pname with
-                    None -> curr_fields' 
-                  | Some pname -> let pdecl = List.find (fun (p) -> compare pname p.cname == 0) classes in
-                                  (check_ivdecls pdecl.fields) @ curr_fields') in
+    let fields' = 
+      let rec get_parent_fields parentname =
+        (match parentname with
+          None -> []
+        | Some pname -> let pdecl = List.find (fun (p) -> compare pname p.cname == 0) classes in
+                        (get_parent_fields pdecl.pname) @ (check_ivdecls pdecl.fields)) 
+      in (get_parent_fields currClass.pname) @ curr_fields'
+    in
     let fields_table = List.fold_left (fun m ivdecl -> StringMap.add ivdecl.siname ivdecl.sityp m) StringMap.empty fields' in
 
     
