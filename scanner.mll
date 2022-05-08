@@ -1,4 +1,14 @@
-(* Ocamllex scanner for MOOP *)
+(* The MOOP Programming Language                                              
+ * Written by:                                                                
+ *             Maxwell Anavian                                                
+ *             Jacqueline Chin                                                
+ *             Isabelle Lai                                                   
+ *             Anthony Tranduc                                                
+ * File:    scanner.mll                                                        
+ * Purpose: Takes streams of ascii text and tokeinizes it                     *)
+
+
+
 
 { open Parser }
 

@@ -1,7 +1,14 @@
+(* The MOOP Programming Language                                              
+ * Written by:                                                                
+ *             Maxwell Anavian                                                
+ *             Jacqueline Chin                                                
+ *             Isabelle Lai                                                   
+ *             Anthony Tranduc                                                
+ * File:    scanner.mll                                                                
+ * Purpose: Top-level of the MicroC compiler: scan & parse the input,
+            check the resulting AST and generate an SAST from it, generate LLVM 
+            IR, and dump the module                                           *)
 
-(* Top-level of the MicroC compiler: scan & parse the input,
-  check the resulting AST and generate an SAST from it, generate LLVM IR,
-  and dump the module *)
 [@@@warning "-70"]
 type action = Ast | Sast | Compile | LLVM_IR 
 
