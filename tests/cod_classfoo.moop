@@ -65,7 +65,6 @@ class Foo <- Bar {
     void printClassName() {
         print("Foo");
     }
-
 }
 
 
@@ -76,6 +75,8 @@ class Main {
         test = new Foo(10);
         test.printAll();
         test.printClassName();
+
+        test.test();
         return 0;
 
     }

@@ -106,7 +106,7 @@ let check (classes) =
       let add_parent_field map ivd =
         if StringMap.for_all (fun name _ -> compare (cd.cname ^ ivd.iname) name != 0) curr_fields 
         then 
-        StringMap.add (cd.cname ^ ivd.iname) ivd.ityp map
+        StringMap.add (cd.cname ^ ivd.iname) (ivd.ityp, ivd.pub) map
        else raise (Failure "parent class and child class should not have duplicate fields")
       in List.fold_left add_parent_field curr_fields ancester_fields
     in List.fold_left add_class_fields StringMap.empty classes in 
