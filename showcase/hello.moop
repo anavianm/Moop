@@ -1,0 +1,30 @@
+// Welcome to MOOP, the Micro OOP language.
+// Edit this program and press Run (or Ctrl+Enter).
+
+class Greeter {
+    string name;
+
+    Greeter Greeter(string name) {
+        this.name = name;
+    }
+
+    void greet() {
+        print("Hello from MOOP!");
+        print(this.name);
+    }
+}
+
+class Main {
+    int main() {
+        Greeter g;
+        int i;
+
+        g = new Greeter("Thanks for visiting");
+        g.greet();
+
+        for (i = 1; i <= 3; i = i + 1) {
+            printi(i * 7);
+        }
+        return 0;
+    }
+}
