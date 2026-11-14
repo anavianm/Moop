@@ -1,9 +1,10 @@
 # MOOP web API
 
-A small HTTP service that compiles MOOP programs with this repo's compiler and runs the
-generated LLVM IR with `lli`. It backs the MOOP Terminal and the Tower of Hanoi game on
-[maxwellanavian.com](https://maxwellanavian.com). `server.py` uses only the Python
-standard library.
+A small, general-purpose HTTP API for compiling and running MOOP programs. Send it
+source code; it compiles it with this repo's compiler, runs the generated LLVM IR with
+`lli`, and returns the output as JSON. Any front end can use it, from an online editor
+to a game that uses MOOP as its backend (see `showcase/hanoi.moop`). `server.py` uses
+only the Python standard library.
 
 - `POST /api/moop/run` with `{"source": "...", "mode": "run" | "ast" | "sast" | "ir"}`
   (`ast`, `sast` and `ir` are the compiler's `-a`, `-s` and `-l` flags)
@@ -45,4 +46,5 @@ Settings (environment variables): `MOOP_BIN`, `MOOP_STDLIB`, `MOOP_LLI` (default
 `/usr/bin/lli-14`), `MOOP_WORKDIR` (default `/dev/shm/moop-jobs`), `MOOP_HOST` (default
 `127.0.0.1`), `MOOP_PORT` (default `8090`), `MOOP_RATE_LIMIT` (default `60`).
 
-In production it listens on localhost behind Apache, which forwards `/api/moop/`.
+It listens on localhost by default. To serve it publicly, put it behind a reverse proxy
+(Apache, nginx, etc.) that forwards `/api/moop/` to it, rather than exposing it directly.

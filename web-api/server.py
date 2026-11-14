@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MOOP run API for maxwellanavian.com.
+"""MOOP run API: compile and run MOOP programs over HTTP.
 
 Compiles a MOOP program with the real MOOP compiler (moop.native, OCaml + LLVM 14)
 and runs the generated LLVM IR with lli. Standard library only.
@@ -9,7 +9,7 @@ and runs the generated LLVM IR with lli. Standard library only.
 
 MOOP programs can only call printf (print/printi/printf/printb) and allocate memory,
 so the sandbox is about resource limits: CPU time, memory, output size and one job
-at a time. Nothing a visitor submits is kept: every job runs in its own folder in RAM
+at a time. Nothing a client submits is kept: every job runs in its own folder in RAM
 (/dev/shm), deleted as soon as the job ends, and the log records only the client,
 mode, result and timing, never the program itself.
 """
