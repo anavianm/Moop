@@ -1,0 +1,258 @@
+// Tower of Hanoi: the game backend, written in MOOP.
+//
+// MOOP programs can't read input, so the Hanoi window on maxwellanavian.com
+// writes the current board and your move into main() below, compiles this file
+// with the real MOOP compiler, runs it, and draws whatever it prints.
+//
+// Output, one value per line:
+//   status    NEW, OK, WON, ILLEGAL, BADSTATE or SOLUTION
+//   message   a sentence for the player (may be empty)
+//   SOLUTION only: pairs of lines "from" "to" for each move, then END and the move count
+//   board     for each peg 0, 1, 2: the number of disks, then the disks bottom to top
+
+class Peg {
+    LinkedList disks;
+
+    Peg Peg() {
+        this.disks = new LinkedList();
+    }
+
+    int count() {
+        LinkedList d;
+        d = this.disks;
+        return d.getSize();
+    }
+
+    int at(int i) {
+        LinkedList d;
+        d = this.disks;
+        return d.getElem(i);
+    }
+
+    int top() {
+        if (this.count() == 0) {
+            return 0;
+        }
+        return this.at(this.count() - 1);
+    }
+
+    void push(int disk) {
+        LinkedList d;
+        d = this.disks;
+        d.insertElem(disk);
+    }
+
+    void pop() {
+        LinkedList d;
+        d = this.disks;
+        d.deleteElem(d.getSize() - 1);
+    }
+
+    // every disk must be smaller than the one beneath it
+    bool ordered() {
+        int i;
+        for (i = 0; i < this.count() - 1; i = i + 1) {
+            if (this.at(i) <= this.at(i + 1)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void report() {
+        int i;
+        printi(this.count());
+        for (i = 0; i < this.count(); i = i + 1) {
+            printi(this.at(i));
+        }
+    }
+}
+
+class Hanoi {
+    Peg p0;
+    Peg p1;
+    Peg p2;
+    int n;
+    int moves;
+
+    Hanoi Hanoi() {
+        this.p0 = new Peg();
+        this.p1 = new Peg();
+        this.p2 = new Peg();
+        this.n = 0;
+        this.moves = 0;
+    }
+
+    Peg peg(int i) {
+        if (i == 0) { return this.p0; }
+        if (i == 1) { return this.p1; }
+        return this.p2;
+    }
+
+    // used by the page to describe the current board, bottom disk first
+    void place(int pegIndex, int disk) {
+        Peg p;
+        p = this.peg(pegIndex);
+        p.push(disk);
+        this.n = this.n + 1;
+    }
+
+    void report() {
+        Peg p;
+        p = this.p0;
+        p.report();
+        p = this.p1;
+        p.report();
+        p = this.p2;
+        p.report();
+    }
+
+    void status(string code, string message) {
+        print(code);
+        print(message);
+        this.report();
+    }
+
+    // the board the page sent must be a real Hanoi position: disks 1..n, each once, stacked in order
+    bool valid() {
+        int d;
+        Peg a;
+        Peg b;
+        Peg c;
+        a = this.p0;
+        b = this.p1;
+        c = this.p2;
+        if (this.n < 1 || this.n > 8) { return false; }
+        if (!a.ordered() || !b.ordered() || !c.ordered()) { return false; }
+        for (d = 1; d <= this.n; d = d + 1) {
+            if (this.where(d) < 0) { return false; }
+        }
+        return true;
+    }
+
+    int where(int disk) {
+        int i;
+        int k;
+        Peg p;
+        for (i = 0; i < 3; i = i + 1) {
+            p = this.peg(i);
+            for (k = 0; k < p.count(); k = k + 1) {
+                if (p.at(k) == disk) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    bool won() {
+        Peg p;
+        p = this.p2;
+        return p.count() == this.n;
+    }
+
+    void newGame(int disks) {
+        int d;
+        if (disks < 1 || disks > 8) {
+            this.status("BADSTATE", "Pick between 1 and 8 disks");
+            return;
+        }
+        for (d = disks; d > 0; d = d - 1) {
+            this.place(0, d);
+        }
+        this.status("NEW", "Move every disk to the right-hand peg");
+    }
+
+    void move(int from, int to) {
+        Peg a;
+        Peg b;
+
+        unless (this.valid()) {
+            this.status("BADSTATE", "That isn't a legal Tower of Hanoi position");
+            return;
+        }
+        if (from < 0 || from > 2 || to < 0 || to > 2 || from == to) {
+            this.status("ILLEGAL", "Pick two different pegs");
+            return;
+        }
+
+        a = this.peg(from);
+        b = this.peg(to);
+        if (a.count() == 0) {
+            this.status("ILLEGAL", "There's no disk on that peg");
+            return;
+        }
+        if (b.count() > 0 && b.top() < a.top()) {
+            this.status("ILLEGAL", "A disk can't go on top of a smaller one");
+            return;
+        }
+
+        b.push(a.top());
+        a.pop();
+        if (this.won()) {
+            this.status("WON", "Solved!");
+        } else {
+            this.status("OK", "");
+        }
+    }
+
+    // Optimal solution from any position: to bring disks 1..k onto target,
+    // the biggest one (k) must move there once, so first park 1..k-1 on the spare peg.
+    void solveTo(int k, int target) {
+        int from;
+        int spare;
+        Peg a;
+        Peg b;
+
+        if (k == 0) {
+            return;
+        }
+        from = this.where(k);
+        if (from == target) {
+            this.solveTo(k - 1, target);
+            return;
+        }
+        spare = 3 - from - target;
+        this.solveTo(k - 1, spare);
+
+        a = this.peg(from);
+        b = this.peg(target);
+        b.push(a.top());
+        a.pop();
+        printi(from);
+        printi(target);
+        this.moves = this.moves + 1;
+
+        this.solveTo(k - 1, target);
+    }
+
+    void solve() {
+        unless (this.valid()) {
+            this.status("BADSTATE", "That isn't a legal Tower of Hanoi position");
+            return;
+        }
+        print("SOLUTION");
+        print("");
+        this.solveTo(this.n, 2);
+        print("END");
+        printi(this.moves);
+        this.report();
+    }
+}
+
+class Main {
+    int main() {
+        Hanoi game;
+        game = new Hanoi();
+
+        // ---- the page replaces everything between these markers ----
+        // @@BEGIN@@
+        game.place(0, 3);
+        game.place(0, 2);
+        game.place(0, 1);
+        game.solve();
+        // @@END@@
+
+        return 0;
+    }
+}
